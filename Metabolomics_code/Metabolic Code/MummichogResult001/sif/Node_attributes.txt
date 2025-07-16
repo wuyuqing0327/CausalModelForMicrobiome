@@ -1,0 +1,333 @@
+CPD_ID	CPD_NAME	CPD_STATISTIC
+C15610	Cholest-5-ene-3beta,26-diol	1000.0
+CE5848	7'-carboxy-gama-tocotrienol	1000.0
+C00021	S-Adenosyl-L-homocysteine	2.1775608803
+CE6248	20-OH-hepoxilin A3	2.1775608803
+CE5995	20-COOH-leukotriene E4	1000.0
+CE2751	dynorphin A (1-5)	2.1775608803
+CE6230	15-hydroperoxyeicosa-8Z,11Z,13E-trienoate	2.1775608803
+CE6234	prostaglandin H1	2.1775608803
+C16578	Morphine-6-glucuronide	2.1775608803
+CE6246	5,12-DiHETE	2.1775608803
+CE2211	allopregnanolone	2.1775608803
+CE6458	CE6458	1000.0
+CE4989	20-OH-10,11-dihydro-leukotriene B4	2.1775608803
+CE4988	10,11-dihydro-12-epi-leukotriene B4	2.1775608803
+CE4987	10,11-dihydro-leukotriene B4	2.1775608803
+CE2056	20-dihydroxyleukotriene B4	2.1775608803
+CE5945	10,11-dihydro-20-dihydroxy-LTB4	1000.0
+CE2053	20-oxo-leukotriene B4	1000.0
+CE0955	CE0955	1000.0
+CE4980	Prostaglandin PGE2 glyceryl ester	2.1775608803
+C05480	3alpha-Hydroxy-5beta-pregnane-20-one	2.1775608803
+CE1358	11beta-hydroxytestosterone	1000.0
+CE5349	5-oxo-6E-12-epi-LTB4	2.1775608803
+C06315	Lipoxin B4	2.1775608803
+C06314	Lipoxin A4	2.1775608803
+elaidcrn	Elaidic carnitine	2.1775608803
+C01029	C01029	2.1775608803
+C05963	C05963	2.1775608803
+C05962	C05962	2.1775608803
+C16321	9(S)-HPOT	1000.0
+C14814	11,14,15-THETA	2.1775608803
+C18045	C18045	1000.0
+C01189	5alpha-Cholest-7-en-3beta-ol	2.1775608803
+C05294	19-Hydroxytestosterone	1000.0
+C06125	Sulfatide	2.1775608803
+C05290	19-Hydroxyandrost-4-ene-3,17-dione	1000.0
+CE6232	prostaglandin G1	1000.0
+CE7110	5,6-epoxy,18R-HEPE	1000.0
+C03845	5alpha-Cholest-8-en-3beta-ol	2.1775608803
+CE7047	CE7047	2.1775608803
+CE5708	15-oxo-Prostaglandin E2 glyceryl ester	2.1775608803
+C00195	N-Acylsphingosine	2.1775608803
+C16680	all-trans-5,6-Epoxyretinoic acid	2.1775608803
+C15816	3-Keto-4-methylzymosterol	2.1775608803
+CE5925	CE5925	2.1775608803
+CE7172	14,15-DiHETE	2.1775608803
+C14825	9(10)-EpOME	1000.0
+C14826	12(13)-EpOME	1000.0
+CE2186	4-methoxy-17beta-estradiol	1000.0
+C00584	Prostaglandin E2	2.1775608803
+CE2183	2-hydroxy-3-methoxy-17beta-estradiol	1000.0
+CE2182	2-methoxy-17beta-estradiol	1000.0
+C03594	7alpha-Hydroxycholesterol	1000.0
+CE6247	5,12,20-TriHETE	2.1775608803
+C16169	(4Z,7Z,10Z,13Z,16Z,19Z)-Docosahexaenoyl-CoA	2.1775608803
+CE1617	9-cis-retinoate	2.1775608803
+CE6240	9-deoxy-delta12-PGD2	2.1775608803
+C16643	Morphine-3-glucuronide	2.1775608803
+vacccrn	Vaccenyl carnitine	2.1775608803
+CE2568	15-epi-lipoxin A4	2.1775608803
+C00427	Prostaglandin H2	2.1775608803
+C16602	3-Hydroxycarbamazepine	2.1775608803
+C12144	Phytosphingosine	2.1775608803
+CE5627	salsoline-1-carboxylate	2.1775608803
+C16601	2-Hydroxycarbamazepine	2.1775608803
+C13550	24-Hydroxycholesterol	1000.0
+C03413	N1,N12-Diacetylspermine	2.1775608803
+CE4876	delta12-Prostaglandin J2	2.1775608803
+C02744	Psychosine sulfate	2.1775608803
+CE5594	9,13-cis-retinoate	2.1775608803
+C15517	Hyodeoxycholate	2.1775608803
+C16396	2,4-Diamino-6-nitrotoluene	2.1775608803
+CE5350	6,7-dihydro-12-epi-LTB4	2.1775608803
+lneldccrn	Linoelaidyl carnitine	2.1775608803
+C15519	Cholest-5-ene-3beta,25-diol	1000.0
+C00712	(9Z)-Octadecenoic acid	1000.0
+CE0232	5beta-cholestane-3alpha,7alpha,12alpha,27-tetraol	2.1775608803
+C05462	Chenodeoxyglycocholate	2.1775608803
+C05463	Taurodeoxycholate	2.1775608803
+CE5352	6,7-dihydro-leukotriene B4	2.1775608803
+C05466	C05466	2.1775608803
+CE1343	18-Oxocortisol	2.1775608803
+C05465	Taurochenodeoxycholate	2.1775608803
+C03711	N-Methylphenylethanolamine	2.1775608803
+C15808	4alpha-Methylzymosterol-4-carboxylate	2.1775608803
+C05711	gamma-Glutamyl-beta-cyanoalanine	2.1775608803
+CE1349	19-oxo-deoxycorticosterone	1000.0
+CE7090	18R-HEPE	2.1775608803
+CE7091	15(R)-hydroperoxy-EPE	2.1775608803
+CE7092	15-oxo-PGE1	2.1775608803
+CE1936	spermine dialdehyde	2.1775608803
+CE7096	5,15-DiHETE	2.1775608803
+CE7097	5-oxo-12(S)-hydroxy-eicosa-6E,8Z,10E,14Z-tetraenoate	2.1775608803
+CE5304	CE5304	2.1775608803
+C13856	2-Arachidonoylglycerol	1000.0
+C01120	Sphinganine 1-phosphate	2.1775608803
+CE6251	12,20-DiHETE	2.1775608803
+C01953	Pregnenolone	2.1775608803
+CE5930	CE5930	2.1775608803
+CE5017	CE5017	2.1775608803
+C05140	16alpha-Hydroxyandrost-4-ene-3,17-dione	1000.0
+CE6453	CE6453	1000.0
+C00410	Progesterone	2.1775608803
+dcsptn1crn	docosa-4,7,10,13,16-pentaenoyl carnitine	2.1775608803
+C04654	(13E)-11alpha-Hydroxy-9,15-dioxoprost-13-enoate	2.1775608803
+CE7144	13'-hydroxy-alpha-tocotrienol	2.1775608803
+CE7145	13'-carboxy-alpha-tocotrienol	2.1775608803
+C00762	Cortisone	2.1775608803
+CE4872	3alpha,7alpha,12alpha-trihydroxy-5beta-cholestan-27-al	2.1775608803
+CE4890	N-methylsalsolinol	2.1775608803
+C04853	20-OH-Leukotriene B4	2.1775608803
+estroneglc	estrone glucuronide	1000.0
+ocdcea	octadecenoate (n-C18:1)	1000.0
+C00881	Deoxycytidine	2.1775608803
+CE2006	CE2006	1000.0
+CE5815	20-hydroxy-5S-HETE	2.1775608803
+C14792	(1S)-Hydroxy-(2S)-glutathionyl-1,2-dihydronaphthalene	2.1775608803
+C14793	(1R)-Glutathionyl-(2R)-hydroxy-1,2-dihydronaphthalene	2.1775608803
+C14790	C14790	2.1775608803
+C14791	(1R)-Hydroxy-(2R)-glutathionyl-1,2-dihydronaphthalene	2.1775608803
+C05479	5beta-Pregnane-3,20-dione	2.1775608803
+C14153	alpha-Tocotrienol	2.1775608803
+C05454	3alpha,7alpha,12alpha-Trihydroxy-5beta-cholestane	2.1775608803
+CE5944	10,11-dihydro-12-oxo-LTB4	2.1775608803
+C07585	N-Acetylisoniazid	2.1775608803
+CE5946	10,11-dihydro-20-trihydroxy-leukotriene B4	2.1775608803
+CE5947	20-COOH-10,11-dihydro-LTB4	2.1775608803
+stcrn	stearoylcarnitine	2.1775608803
+CE6473	CE6473	2.1775608803
+C02567	N1-Acetylspermine	2.1775608803
+lnlncacrn	alpha-linolenyl carnitine	2.1775608803
+CE7088	PGH3	1000.0
+C04244	6-Lactoyl-5,6,7,8-tetrahydropterin	2.1775608803
+CE7085	5-HEPE	2.1775608803
+C06868	Carbamazepine	2.1775608803
+CE7083	leukotriene B5	2.1775608803
+CE7082	CE7082	2.1775608803
+C16420	4-Acetamido-2-amino-6-nitrotoluene	2.1775608803
+CE7080	15(S)-hydroperoxy-EPE	2.1775608803
+CE6466	CE6466	1000.0
+CE6467	CE6467	1000.0
+CE6464	CE6464	1000.0
+CE6465	CE6465	1000.0
+CE6462	CE6462	1000.0
+CE6463	CE6463	1000.0
+C01312	Prostaglandin I2	2.1775608803
+CE6461	CE6461	1000.0
+C14762	13(S)-HODE	1000.0
+C00909	Leukotriene A4	2.1775608803
+CE5179	6,7-dihydro-5-oxo-leukotriene B4	2.1775608803
+CE5178	5-oxo-6-trans-leukotriene B4	2.1775608803
+C05444	3alpha,7alpha,26-Trihydroxy-5beta-cholestane	2.1775608803
+C02442	N-Methyltyramine	2.1775608803
+C07344	3-Hydroxyquinine	2.1775608803
+CE6457	CE6457	1000.0
+C03246	ADPribose 2'-phosphate	2.1775608803
+CE1356	2beta-hydroxytestosterone	1000.0
+CE5343	6,7-dihydro-5-oxo-12-epi-LTB4	2.1775608803
+CE2952	13-cis-retinoate	2.1775608803
+C05956	Prostaglandin G2	2.1775608803
+C02198	Thromboxane A2	2.1775608803
+C06340	27-Hydroxycholesterol	1000.0
+caro	beta-Carotene	2.1775608803
+CE5703	12(S)-hydroxyarachidonylethanolamide	2.1775608803
+C15492	all-trans-13,14-Dihydroretinol	2.1775608803
+CE6579	9-cis-beta-carotene	2.1775608803
+CE5704	15(S)-hydroxyarachidonylethanolamide	2.1775608803
+C14782	11,12,15-THETA	2.1775608803
+C00061	FMN	2.1775608803
+C05446	3alpha,7alpha,12alpha,26-Tetrahydroxy-5beta-cholestane	2.1775608803
+C04530	4,4-Dimethyl-5alpha-cholest-7-en-3beta-ol	1000.0
+CE3140	CE3140	2.1775608803
+C01780	Aldosterone	2.1775608803
+CE7089	11R-HEPE	2.1775608803
+CE2314	4,4-dimethylcholesta-8(9)-en-3beta-ol	1000.0
+CE2315	cholesta-8(9)-en-3beta-ol	2.1775608803
+C16677	all-trans-4-Hydroxyretinoic acid	2.1775608803
+CE1342	18-Hydroxycortisol	2.1775608803
+C05011	Hydroxytamoxifen	2.1775608803
+C01753	Sitosterol	1000.0
+CE5661	15-oxo-lipoxin A4	1000.0
+CE5663	13,14-dihydro- lipoxin A4	2.1775608803
+13-cis-retn	13-cis-retinoate	2.1775608803
+CE5140	12-oxo-20-trihydroxy-leukotriene B4	2.1775608803
+C04785	13(S)-HPOT	1000.0
+C01301	3alpha,7alpha,12alpha-Trihydroxy-5beta-cholestan-26-al	2.1775608803
+lnlccrn	Linoleyl carnitine	2.1775608803
+CE7093	13,14-dihydro-15-oxo-PGE1	2.1775608803
+CE5849	7'-carboxy-alpha-tocotrienol	2.1775608803
+C03681	5alpha-Pregnane-3,20-dione	2.1775608803
+C06459	N-Trimethyl-2-aminoethylphosphonate	2.1775608803
+C00270	N-Acetylneuraminate	2.1775608803
+CE5787	kinetensin 1-3	1000.0
+C00272	Tetrahydrobiopterin	2.1775608803
+C04079	N-((R)-Pantothenoyl)-L-cysteine	2.1775608803
+C12448	Ecgonine methyl ester	1000.0
+CE2567	5(S),6(S)-epoxy-15(S)-hydroxy-7E,9E,11Z,13E-eicosatetraenoic acid anion	2.1775608803
+C01262	beta-Alanyl-N(pi)-methyl-L-histidine	1000.0
+CE7081	15(R)-HEPE	2.1775608803
+CE2566	5(S),6(S)-epoxy-15(R)-hydroxyeicosatetraenoate	2.1775608803
+CE2084	5-oxo-(6E,8Z,11Z,14Z)-eicosatetraenoic acid	2.1775608803
+C14497	6beta-Hydroxytestosterone	1000.0
+C00475	Cytidine	2.1775608803
+C15780	5-Dehydroepisterol	2.1775608803
+C02679	Dodecanoic acid	2.1775608803
+CE6460	CE6460	1000.0
+C00294	Inosine	2.1775608803
+C03091	5beta-Cholestan-3-one	2.1775608803
+CE7109	5(S),6(S)-epoxy-15(R)-HEPE	1000.0
+C16659	2-Ethylidene-1,5-dimethyl-3,3-diphenylpyrrolidine	2.1775608803
+C05451	7alpha-Hydroxy-5beta-cholestan-3-one	1000.0
+CE5721	7'-carboxy-gama-chromanol	2.1775608803
+CE5526	CE5526	2.1775608803
+CE5527	CE5527	2.1775608803
+CE1447	11-dehydrothromboxane B2	2.1775608803
+C06424	Tetradecanoic acid	2.1775608803
+C00696	(5Z,13E)-(15S)-9alpha,15-Dihydroxy-11-oxoprosta-5,13-dienoate	2.1775608803
+C05302	2-Methoxyestradiol-17beta	1000.0
+C04843	(5Z,9E,14Z)-(8xi,11xi,12S)-8,11,12-Trihydroxyicosa-5,9,14-trienoate	2.1775608803
+CE5723	5'-carboxy-gama-chromanol	2.1775608803
+CE5662	13,14-dihydro-15-oxo-lipoxin A4	2.1775608803
+CE3554	20-trihydroxy-leukotriene-B4	2.1775608803
+CE5528	CE5528	1000.0
+C05953	Prostaglandin A2	2.1775608803
+C00268	Dihydrobiopterin	2.1775608803
+C04671	(5Z)-(15S)-11alpha-Hydroxy-9,15-dioxoprostanoate	2.1775608803
+C05957	Prostaglandin J2	2.1775608803
+C05954	Prostaglandin B2	2.1775608803
+C05955	Prostaglandin C2	2.1775608803
+CE5791	kinetensin 4-8	2.1775608803
+C09640	(-)-Salsoline	2.1775608803
+C05959	11-epi-Prostaglandin F2alpha	2.1775608803
+clpndcrn	clupanodonyl carnitine	2.1775608803
+C05118	S-(2-Methylbutanoyl)-dihydrolipoamide	2.1775608803
+C05119	S-(3-Methylbutanoyl)-dihydrolipoamide	2.1775608803
+CE7072	13'-carboxy-gama-tocotrienol	2.1775608803
+C14830	GDP-4-keto-6-L-deoxygalactose	2.1775608803
+C04814	4beta-Hydroxymethyl-4alpha-methyl-5alpha-cholest-7-en-3beta-ol	2.1775608803
+tethex3	tetracosahexaenoic acid, n-3	2.1775608803
+CE4786	nisinate	2.1775608803
+C00612	N1-Acetylspermidine	2.1775608803
+C00187	Cholesterol	2.1775608803
+C03242	(8Z,11Z,14Z)-Icosatrienoic acid	2.1775608803
+hpdcacrn	heptadecanoyl carnitine	2.1775608803
+egme	ecgonine methyl ester	1000.0
+C18075	C18075	1000.0
+C05500	20alpha-Hydroxycholesterol	1000.0
+C05503	Estradiol-17beta 3-glucuronide	2.1775608803
+C05502	22beta-Hydroxycholesterol	1000.0
+CE6474	CE6474	2.1775608803
+CE5533	CE5533	2.1775608803
+CE2569	15-epi-lipoxin B4	2.1775608803
+CE5828	CE5828	2.1775608803
+CE6219	CE6219	2.1775608803
+q10h2	Ubiquinol-10	2.1775608803
+C08012	Levomethadyl acetate	2.1775608803
+C01712	(9E)-Octadecenoic acid	1000.0
+C15915	4,4-Dimethyl-5alpha-cholesta-8-en-3beta-ol	1000.0
+CE7113	15-epi-lipoxin B5	1000.0
+CE7112	15-epi-lipoxin A5	1000.0
+CE5535	CE5535	2.1775608803
+CE5534	CE5534	2.1775608803
+CE5537	CE5537	2.1775608803
+C16679	all-trans-18-Hydroxyretinoic acid	2.1775608803
+C14765	13-OxoODE	2.1775608803
+C07572	Citalopram	2.1775608803
+vacc	vaccenic acid	1000.0
+CE1272	5beta-cholestane-3alpha,7alpha,12alpha,25-tetrol	2.1775608803
+estradiolglc	estradiol glucuronide	2.1775608803
+C05109	24,25-Dihydrolanosterol	2.1775608803
+CE7115	20-hydroxy-leukotriene B5	1000.0
+odecrn	octadecenoyl carnitine	2.1775608803
+C04042	20alpha-Hydroxy-4-pregnen-3-one	2.1775608803
+CE7084	CE7084	2.1775608803
+C03577	20-Hydroxyleukotriene E4	2.1775608803
+C03626	Nomega,Nomega'-Dimethyl-L-arginine	2.1775608803
+CE6456	CE6456	1000.0
+C02094	beta-Carotene	2.1775608803
+CE6454	CE6454	1000.0
+C03150	N-Ribosylnicotinamide	2.1775608803
+CE6452	CE6452	1000.0
+C01674	Chitobiose	2.1775608803
+CE2445	6-trans-leukotriene B4	2.1775608803
+CE6193	18-carboxy-dinor-LTE4	2.1775608803
+CE5926	CE5926	2.1775608803
+CE5924	CE5924	2.1775608803
+C01152	N(pi)-Methyl-L-histidine	2.1775608803
+C04717	(9Z,11E)-(13S)-13-Hydroperoxyoctadeca-9,11-dienoic acid	2.1775608803
+C05490	11-Dehydrocorticosterone	1000.0
+CE5928	CE5928	2.1775608803
+CE5929	CE5929	2.1775608803
+C04483	3alpha,12alpha-Dihydroxy-5beta-cholanate	2.1775608803
+C07163	Methadone	1000.0
+CE7114	CE7114	1000.0
+C02477	alpha-Tocopherol	2.1775608803
+CE6229	13E-tetranor-16-carboxy-LTE4	2.1775608803
+C11133	Estrone glucuronide	1000.0
+CE6185	omega-carboxy-trinor-leukotriene B4	2.1775608803
+CE4990	12-oxo-leukotriene B4	2.1775608803
+C04741	Alprostadil	2.1775608803
+CE6508	5-hydroperoxy-EPA	2.1775608803
+C16545	C16545	2.1775608803
+C16544	alpha-Hydroxytamoxifen	2.1775608803
+CE5655	13'-hydroxy-gama-tocopherol	2.1775608803
+CE6506	CE6506	1000.0
+C02953	7,8-Dihydrobiopterin	2.1775608803
+C16660	2-Ethyl-5-methyl-3,3-diphenyl-1-pyrroline	2.1775608803
+C16661	L-alpha-Acetyl-N-normethadol	1000.0
+C16662	L-alpha-Acetyl-N,N-dinormethadol	2.1775608803
+lnlncgcrn	gamma-linolenyl carnitine	2.1775608803
+CE6459	CE6459	1000.0
+C02528	Chenodeoxycholate	2.1775608803
+C00836	Sphinganine	2.1775608803
+C05139	16alpha-Hydroxydehydroepiandrosterone	1000.0
+C16548	N,N-Didesmethyltamoxifen	2.1775608803
+C01222	GDP-4-dehydro-6-deoxy-D-mannose	2.1775608803
+C05202	3'-Hydroxy-N-methyl-(S)-coclaurine	2.1775608803
+CE7101	CE7101	2.1775608803
+C05284	11beta-Hydroxyandrost-4-ene-3,17-dione	1000.0
+CE2449	11,12-dihydroxy-5(E),7(E),9(E),14(Z)-eicosatetraenoate	2.1775608803
+CE5931	CE5931	2.1775608803
+CE2917	apelin-13	2.1775608803
+CE2446	6E-12-epi-LTB4	2.1775608803
+C14827	9(S)-HPODE	2.1775608803
+C00639	Prostaglandin F2alpha	2.1775608803
+C00239	dCMP	1000.0
+C00415	Dihydrofolate	2.1775608803
+CE5138	12-oxo-20-hydroxy-leukotriene B4	1000.0
+CE4995	10,11-dihydro-12R-hydroxy-leukotriene E4	2.1775608803
+C07496	Carbamazepine-10,11-epoxide	2.1775608803
+CE6455	CE6455	1000.0
+C04554	3alpha,7alpha-Dihydroxy-5beta-cholestanate	2.1775608803

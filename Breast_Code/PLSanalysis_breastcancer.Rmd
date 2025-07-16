@@ -1,0 +1,162 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+
+### This is holistic code ********* 
+library(mixOmics)
+library(tibble)
+library(fastDummies)
+
+# Load the data
+data <- read.csv('C:\\Users\\yuqingw1\\Workfolder\\Data\\Breast_Cancer\\breastcancer_pls_data.csv')
+
+### Part 1: 
+# Data Processing
+
+# Gender and smoking status processing
+data$marital_status <- as.character(data$marital_status)
+data$tobacco_history <- as.character(data$tobacco_history)
+data$alcohol_history <- as.character(data$alcohol_history)
+data$T2D <- as.character(data$T2D)
+data$marital_status <- ifelse(data$marital_status == "", "missing", data$marital_status)
+data$tobacco_history <- ifelse(data$tobacco_history == "", "missing", data$tobacco_history)
+data$alcohol_history <- ifelse(data$alcohol_history == "", "missing", data$alcohol_history)
+data$T2D <- ifelse(data$T2D == "", "missing", data$T2D)
+
+# Handling missing values in age and rank
+data$Age_serum[is.na(data$Age_serum)] <- mean(data$Age_serum, na.rm = TRUE)
+data$adi_natrank[is.na(data$adi_natrank)] <- mean(data$adi_natrank, na.rm = TRUE)
+
+
+# Generate dummy variables
+modeldata <- dummy_cols(data, select_columns = c( 'marital_status', 'tobacco_history', 'alcohol_history', 'T2D'), remove_selected_columns = TRUE)
+
+
+
+# Define the list of microbiome columns (ylist)
+#xlist <- colnames(data[, 13:ncol(data)])
+xlist <- paste0("v", 1:12023)
+
+covariate_variables <- c('marital_status_0', 'marital_status_1', 
+                         'tobacco_history_0', 'alcohol_history_0', 
+                         'T2D_0', 'adi_natrank', 'Age_serum')
+
+# Create an empty dataframe to store residuals
+residual_matrix <- matrix(NA, nrow = nrow(modeldata), ncol = length(xlist))
+colnames(residual_matrix) <- xlist
+
+# Loop through each variable in `xlist`
+for (x in xlist) {
+  # Create the regression formula
+  formula <- as.formula(paste(x, "~", paste(covariate_variables, collapse = " + ")))
+
+  # Fit the regression model
+  model <- lm(formula, data = modeldata)
+
+  # Extract residuals
+  residuals <- residuals(model)
+
+  # Align residuals with the original data rows
+  residual_matrix[as.numeric(names(residuals)), x] <- residuals
+}
+
+# Convert matrix to dataframe
+residual_matrix <- as.data.frame(residual_matrix)
+
+# View the residual matrix
+print(head(residual_matrix))
+
+
+# --------------------------------
+# Perform PLS Regression
+# --------------------------------
+
+calculate_vip <- function(pls_model) {
+  # Extract loadings (weights for each variable)
+  W <- pls_model$loadings$X  # A matrix of loadings: variables × components
+  # Proportion of variance explained by each component for the response variable
+  SSY <- pls_model$prop_expl_var$Y  # Proportion of variance explained for each component
+  # Number of variables (rows in W)
+  num_variables <- nrow(W)
+  # Number of components
+  num_components <- ncol(W)
+  # Initialize a VIP vector
+  vip <- numeric(num_variables)
+  # Loop through each variable
+  for (j in 1:num_variables) {
+    # Compute VIP score for variable j
+    vip[j] <- sqrt(num_variables * sum((SSY / sum(SSY)) * (W[j, ]^2)))
+  }
+  # Assign variable names to the VIP scores
+  names(vip) <- rownames(W)
+  return(vip)
+}
+
+
+# Define response variables
+response_variables <- c("White_alone_not_Hispanic_or_Latino_rate", 
+                        "high_school_and_lessthen_rate", 
+                        "poverty_below_100_rate")
+
+# Initialize dataframe to store VIP scores
+vip_matrix <- data.frame(Metabolomic_Feature = xlist)  
+colnames(vip_matrix)[1] <- "MetabolomicsID"
+
+# Loop through each response variable
+for (response in response_variables) {
+  
+  # Calculate the 1/3 quantile
+  quantile_threshold <- quantile(modeldata[[response]], probs = 1/3, na.rm = TRUE)
+  
+  # Create a binary variable: 1 if <= 1/3 quantile, else 0
+  modeldata[[paste0(response, "_binary")]] <- ifelse(modeldata[[response]] <= quantile_threshold, 1, 0)
+  
+  # Print the category value counts
+  print(table(modeldata[[paste0(response, "_binary")]]))
+  
+  
+  # Extract the response variable
+  Y <- modeldata[[paste0(response, "_binary")]]
+  
+  # Convert residual matrix to numeric matrix
+  X <- as.matrix(residual_matrix)
+  
+  # Perform PLS-DA
+  plsda_model <- plsda(X, Y, ncomp = 2)  # Use 2 components
+  
+  # Extract VIP scores
+  vip_scores <- calculate_vip(plsda_model)
+  
+  # Convert VIP scores to a dataframe and label it by response variable
+  vip_matrix[[paste0(response, "_binary")]] <- vip_scores
+  
+}
+
+
+# --------------------------------
+# Extract and Analyze Results
+# --------------------------------
+
+
+print(vip_matrix)
+# Save the dataframe to a CSV file
+write.csv(vip_matrix, "C:\\Users\\yuqingw1\\Workfolder\\result\\Breast_Cancer\\vip_matrix.csv", row.names = FALSE)
+
+
+
+
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

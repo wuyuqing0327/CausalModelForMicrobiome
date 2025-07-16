@@ -1,0 +1,1204 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+##### Beta diversity Regression
+
+```{r}
+library(tidyverse)
+library(vegan)
+library(ggplot2)
+
+#Read data, NMDS & beta diversity for Resistin
+microBeta <- read.csv("/Users/chelseawu/UChicago/Part-time/BSD/Datasets/microbiome_combine_806row_bray_curtis.csv")
+label <- read.csv("/Users/chelseawu/UChicago/Part-time/BSD/Datasets/microbiome_allvariable_806_original.csv")
+label <- label %>% select(all_of(c('sampleID', 'Resistin')))
+
+
+names(microBeta)[names(microBeta) == "X"] <- "sampleID"
+microBeta$sampleID <- as.character(microBeta$sampleID)
+
+micro_merge <- merge(microBeta, label, by = "sampleID", all.y = FALSE)
+
+#Select rows and columns from the beta diversity matrix
+colsel <- paste("X", micro_merge$sampleID, sep="")
+rowsel <- micro_merge$sampleID
+
+coloverlap <- intersect(colsel, colnames(microBeta))
+rowoverlap <- intersect(rowsel, microBeta$sampleID)
+
+microBeta_sel <- microBeta[microBeta$sampleID %in% rowoverlap , c(coloverlap)]
+
+#Find the row number where value = 0 for each column
+zero_rows <- numeric(806)
+
+for(i in 1:806){
+  zero_rows[i] <- which(microBeta_sel[, i] == 0)
+}
+
+
+# Create dataset for NMDS
+dist_str <- vegdist(microBeta_sel, method="bray")
+
+###NMDS analysis
+set.seed(1993)
+#nmds <- metaMDS(dist_str, autotransform = FALSE)
+nmds_w <- metaMDS(dist_str)
+
+###Create new dataset after NMDS plot
+#nmds_points$sampleID <- as.character(nmds_points$sampleID)
+#nmds_points <- scores(nmds_w) %>% as_tibble(rownames = "sampleID")
+#nmds_points[zero_rows, ]$sampleID <-  as.numeric(substring(colnames(microBeta_sel), 2))
+
+# Create new dataset after NMDS plot
+nmds_points <- scores(nmds_w) %>% as_tibble(rownames = "sampleID")
+nmds_points$sampleID <- as.character(nmds_points$sampleID)
+# Assign numeric sample IDs to zero_rows
+sample_ids_numeric <- as.character(as.numeric(substring(colnames(microBeta_sel)[-1], 2)))
+
+
+# Make sure zero_rows is a vector of correct indices
+zero_rows <- as.integer(zero_rows)
+
+for(i in 1:length(zero_rows)){
+  if(!is.na(zero_rows[i])){
+    nmds_points$sampleID[zero_rows[i]] <- sample_ids_numeric[i]
+  }
+}
+
+# Convert sampleID in micro_merge to character
+micro_merge$sampleID <- as.character(micro_merge$sampleID)
+
+
+nmds_df <- nmds_points %>% 
+  inner_join(., micro_merge, by="sampleID") 
+
+nmds_df$Resistin <- as.numeric(nmds_df$Resistin)
+# Create bins for Resistin, excluding NA values
+nmds_df$Resistin_bin <- cut(nmds_df$Resistin,
+                            breaks = quantile(nmds_df$Resistin, probs = seq(0, 1, by = 0.25), na.rm = TRUE),
+                            include.lowest = TRUE,
+                            labels = c("Low", "Medium-Low", "Medium-High", "High"))
+# Assign 'missing' to NA values
+nmds_df$Resistin_bin[is.na(nmds_df$Resistin)] <- "Missing"
+# Convert to a factor to ensure the order of levels
+nmds_df$Resistin_bin <- factor(nmds_df$Resistin_bin, levels = c("Low", "Medium-Low", "Medium-High", "High", "Missing"))
+nmds_df$Resistin_bin[is.na(nmds_df$Resistin_bin)] <- "Missing"
+
+
+
+# plot - new version （20250629）
+# Define colors: use light gray for "Missing"
+custom_colors <- c(
+  "Low" = "#1f77b4",            # blue
+  "Medium-Low" = "#ff7f0e",     # orange
+  "Medium-High" = "#2ca02c",    # green
+  "High" = "#d62728",           # red
+  "Missing" = "lightgray"       # light gray
+)
+
+# Generate plot
+Resistin_nmdsplot <- ggplot(nmds_df, aes(x = NMDS1, y = NMDS2, color = as.factor(Resistin_bin))) +
+  geom_point(size = 2, alpha = 0.8) +  # Simple clean dots
+  stat_ellipse(type = "t", level = 0.95, size = 0.8, fill = NA, aes(color = as.factor(Resistin_bin))) +  # Solid outline
+  scale_color_manual(values = custom_colors) +
+  theme_minimal() +
+  labs(title = "Oral Microbiome Composition by Resistin Bin", color = "Resistin Bin") +
+  theme(
+    axis.line = element_line(color = "black", size = 0.5),  # 加上轴线
+    panel.grid = element_blank(),               # remove grid
+    panel.border = element_rect(color = "black", fill = NA, size = 0.8),  # 黑色四边框
+    axis.ticks = element_line(color = "black"), # keep axis ticks
+    axis.text = element_text(size = 10),
+    axis.title = element_blank(),
+    plot.title = element_text(hjust = 0.5, size = 16),
+    legend.position = "right",
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 11)
+  )
+
+
+
+##Plot-old version
+#custom_colors <- c("Low" = "blue", "Medium-Low" = "green", "Medium-High" = "yellow", "High" = "red", "Missing" = "grey")
+
+#Resistin_nmdsplot <- ggplot(nmds_df, aes(x = NMDS1, y = NMDS2, color = as.factor(Resistin_bin), fill = as.factor(Resistin_bin))) +
+#  geom_point() + 
+#  stat_ellipse(type = "t", level = 0.95, geom = "polygon", alpha = 0.2) +
+#  scale_color_manual(values = custom_colors) +
+#  scale_fill_manual(values = custom_colors) +
+#  theme_minimal() +
+#  labs(title = "Oral microbiome composition according to Resistin Bin", color = "Resistin Bin", fill = "Resistin Bin") +
+#  theme(
+#    panel.grid = element_blank(),          # Remove grid
+#    panel.border = element_rect(color = "black", fill = NA),  # Add lines for both axes
+#    plot.title = element_text(hjust = 0.5, size=18), # Center the title
+#    legend.position = c(0.06, 0.99),         # Place legend in the upper right corner
+#    legend.justification = c(0, 1),         # Adjust legend anchor point
+#    legend.text = element_text(size = 7), # Adjust legend text size
+#    legend.title = element_text(size = 8), # Adjust legend title size
+#    legend.key.size = unit(0.8, "cm"),   # Adjust size of legend keys
+#    legend.spacing.x = unit(0.6, "cm"),     # Adjust horizontal spacing between legend items
+#    legend.spacing.y = unit(0.6, "cm")      # Adjust vertical spacing between legend items
+#  ) 
+
+# Print the plot
+print(Resistin_nmdsplot)
+
+# Save the plot
+#ggsave("nmdsplot_Resistin.png", plot = Resistin_nmdsplot, width = 10, height = 6, units = "in", bg = "white")
+
+```
+
+
+
+```{r}
+library(dplyr)
+library(fastDummies)
+
+### beta diversity regression for resistin 
+
+#Read data, beta diversity
+origin <- read.csv("/Users/chelseawu/UChicago/Part-time/BSD/Datasets/microbiome_allvariable_806_original.csv")
+
+origin <- origin %>% select(all_of(c('sampleID', 'age', 'gender', 'bmi', 'smoking_status', 'diabetes2', 'Resistin')))
+
+data <- merge(nmds_points, origin, by = "sampleID", all.y = FALSE)
+
+# Define cut points
+cutPoints <- c(18.5, 25, 30)
+subset_data <- data[!is.na(data$bmi),]
+subset_data$bmi_binned2 <- cut(subset_data$bmi, breaks = c(-Inf, cutPoints, Inf), labels = FALSE)
+subset_data$bmi_binned2 <- as.character(subset_data$bmi_binned2)
+missing_data <- data[is.na(data$bmi),]
+missing_data$bmi_binned2 <- "missing"
+data <- rbind(subset_data, missing_data)
+new_labels <- c(
+  "inf_18.5",
+  "18.5_25.0",
+  "25.0_30.0",
+  "30.0_inf",
+  "missing"
+)
+data$bmi_binned2 <- factor(data$bmi_binned2, labels = new_labels)
+table(data$bmi_binned2)
+
+data$gender <- as.character(data$gender)
+data$gender[data$gender == ""] <- "missing"
+table(data$gender)
+
+data$smoking_status <- as.character(data$smoking_status)
+data$smoking_status[data$smoking_status == ""] <- "missing"
+table(data$smoking_status)
+
+data$diabetes2 <- as.character(data$diabetes2)
+data$diabetes2[data$diabetes2 %in% c("I don't know", "I prefer not to answer")] <- "missing"
+data$diabetes2[data$diabetes2 == ""] <- "missing"
+table(data$diabetes2)
+
+age_mean <- mean(data$age, na.rm = TRUE)
+# Fill missing values in the 'age' column with the mean
+data$age[is.na(data$age)] <- age_mean
+
+
+df <- dummy_cols(data, select_columns = c("gender", "bmi_binned2", "smoking_status", "diabetes2"), remove_selected_columns = TRUE)
+
+
+df <- df[!is.na(df$Resistin), ]
+
+df$Resistin_v2 <- log(df$Resistin)
+df$Resistin_v3 <- (df$Resistin_v2 - mean(df$Resistin_v2)) / sd(df$Resistin_v2)
+
+
+#### regression model 
+all_predictors <- c('age', 'gender_Male',
+                'bmi_binned2_30.0_inf', 'bmi_binned2_25.0_30.0', 'bmi_binned2_inf_18.5',
+                'smoking_status_Current', 'smoking_status_Former',
+                'diabetes2_Yes', 'NMDS1')
+formula <- as.formula(paste("Resistin_v3 ~", paste(all_predictors, collapse = " + ")))
+
+# Run the linear regression model
+model <- lm(formula, data = df)
+
+# Print the summary of the model
+summary(model)
+
+```
+
+
+
+
+```{r}
+library(tidyverse)
+library(vegan)
+library(ggplot2)
+
+#Read data,  NMDS &  beta diversity for Insulin
+microBeta <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\processing_4_microbiome_new\\microbiome_combine_806row_bray_curtis.csv")
+label <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\microbiome_allvariable_806_original.csv")
+label <- label %>% select(all_of(c('sampleID', 'Insulin')))
+
+
+names(microBeta)[names(microBeta) == "X"] <- "sampleID"
+microBeta$sampleID <- as.character(microBeta$sampleID)
+
+micro_merge <- merge(microBeta, label, by = "sampleID", all.y = FALSE)
+
+#Select rows and columns from the beta diversity matrix
+colsel <- paste("X", micro_merge$sampleID, sep="")
+rowsel <- micro_merge$sampleID
+
+coloverlap <- intersect(colsel, colnames(microBeta))
+rowoverlap <- intersect(rowsel, microBeta$sampleID)
+
+microBeta_sel <- microBeta[microBeta$sampleID %in% rowoverlap , c(coloverlap)]
+
+#Find the row number where value = 0 for each column
+zero_rows <- numeric(806)
+
+for(i in 1:806){
+  zero_rows[i] <- which(microBeta_sel[, i] == 0)
+}
+
+
+# Create dataset for NMDS
+dist_str <- vegdist(microBeta_sel, method="bray")
+
+###NMDS analysis
+set.seed(1993)
+#nmds <- metaMDS(dist_str, autotransform = FALSE)
+nmds_w <- metaMDS(dist_str)
+
+###Create new dataset after NMDS plot
+#nmds_points$sampleID <- as.character(nmds_points$sampleID)
+#nmds_points <- scores(nmds_w) %>% as_tibble(rownames = "sampleID")
+#nmds_points[zero_rows, ]$sampleID <-  as.numeric(substring(colnames(microBeta_sel), 2))
+
+# Create new dataset after NMDS plot
+nmds_points <- scores(nmds_w) %>% as_tibble(rownames = "sampleID")
+nmds_points$sampleID <- as.character(nmds_points$sampleID)
+# Assign numeric sample IDs to zero_rows
+sample_ids_numeric <- as.character(as.numeric(substring(colnames(microBeta_sel)[-1], 2)))
+
+
+# Make sure zero_rows is a vector of correct indices
+zero_rows <- as.integer(zero_rows)
+
+for(i in 1:length(zero_rows)){
+  if(!is.na(zero_rows[i])){
+    nmds_points$sampleID[zero_rows[i]] <- sample_ids_numeric[i]
+  }
+}
+
+# Convert sampleID in micro_merge to character
+micro_merge$sampleID <- as.character(micro_merge$sampleID)
+
+
+nmds_df <- nmds_points %>% 
+  inner_join(., micro_merge, by="sampleID") 
+
+nmds_df$Insulin <- as.numeric(nmds_df$Insulin)
+# Create bins for Insulin, excluding NA values
+nmds_df$Insulin_bin <- cut(nmds_df$Insulin,
+                            breaks = quantile(nmds_df$Insulin, probs = seq(0, 1, by = 0.25), na.rm = TRUE),
+                            include.lowest = TRUE,
+                            labels = c("Low", "Medium-Low", "Medium-High", "High"))
+# Assign 'missing' to NA values
+nmds_df$Insulin_bin[is.na(nmds_df$Insulin)] <- "Missing"
+# Convert to a factor to ensure the order of levels
+nmds_df$Insulin_bin <- factor(nmds_df$Insulin_bin, levels = c("Low", "Medium-Low", "Medium-High", "High", "Missing"))
+nmds_df$Insulin_bin[is.na(nmds_df$Insulin_bin)] <- "Missing"
+
+
+#Plot
+custom_colors <- c("Low" = "blue", "Medium-Low" = "green", "Medium-High" = "yellow", "High" = "red", "Missing" = "grey")
+
+Insulin_nmdsplot <- ggplot(nmds_df, aes(x = NMDS1, y = NMDS2, color = as.factor(Insulin_bin), fill = as.factor(Insulin_bin))) +
+  geom_point() + 
+  stat_ellipse(type = "t", level = 0.95, geom = "polygon", alpha = 0.2) +
+  scale_color_manual(values = custom_colors) +
+  scale_fill_manual(values = custom_colors) +
+  theme_minimal() +
+  labs(title = "Oral microbiome composition according to Insulin Bin", color = "Insulin Bin", fill = "Insulin Bin") +
+  theme(
+    panel.grid = element_blank(),          # Remove grid
+    panel.border = element_rect(color = "black", fill = NA),  # Add lines for both axes
+    plot.title = element_text(hjust = 0.5, size=18), # Center the title
+    legend.position = c(0.06, 0.99),         # Place legend in the upper right corner
+    legend.justification = c(0, 1),         # Adjust legend anchor point
+    legend.text = element_text(size = 7), # Adjust legend text size
+    legend.title = element_text(size = 8), # Adjust legend title size
+    legend.key.size = unit(0.8, "cm"),   # Adjust size of legend keys
+    legend.spacing.x = unit(0.6, "cm"),     # Adjust horizontal spacing between legend items
+    legend.spacing.y = unit(0.6, "cm")      # Adjust vertical spacing between legend items
+  ) 
+
+# Print the plot
+print(Insulin_nmdsplot)
+
+# Save the plot
+#ggsave("nmdsplot_Insulin.png", plot = nmdsplot, width = 10, height = 6, units = "in", bg = "white")
+
+```
+
+
+```{r}
+
+library(dplyr)
+library(fastDummies)
+
+### beta diversity regression for Insulin
+
+#Read data, beta diversity
+origin <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\microbiome_allvariable_806_original.csv")
+
+origin <- origin %>% select(all_of(c('sampleID', 'age', 'gender', 'bmi', 'smoking_status', 'diabetes2', 'Insulin')))
+
+data <- merge(nmds_points, origin, by = "sampleID", all.y = FALSE)
+
+# Define cut points
+cutPoints <- c(18.5, 25, 30)
+subset_data <- data[!is.na(data$bmi),]
+subset_data$bmi_binned2 <- cut(subset_data$bmi, breaks = c(-Inf, cutPoints, Inf), labels = FALSE)
+subset_data$bmi_binned2 <- as.character(subset_data$bmi_binned2)
+missing_data <- data[is.na(data$bmi),]
+missing_data$bmi_binned2 <- "missing"
+data <- rbind(subset_data, missing_data)
+new_labels <- c(
+  "inf_18.5",
+  "18.5_25.0",
+  "25.0_30.0",
+  "30.0_inf",
+  "missing"
+)
+data$bmi_binned2 <- factor(data$bmi_binned2, labels = new_labels)
+table(data$bmi_binned2)
+
+data$gender <- as.character(data$gender)
+data$gender[data$gender == ""] <- "missing"
+table(data$gender)
+
+data$smoking_status <- as.character(data$smoking_status)
+data$smoking_status[data$smoking_status == ""] <- "missing"
+table(data$smoking_status)
+
+data$diabetes2 <- as.character(data$diabetes2)
+data$diabetes2[data$diabetes2 %in% c("I don't know", "I prefer not to answer")] <- "missing"
+data$diabetes2[data$diabetes2 == ""] <- "missing"
+table(data$diabetes2)
+
+age_mean <- mean(data$age, na.rm = TRUE)
+# Fill missing values in the 'age' column with the mean
+data$age[is.na(data$age)] <- age_mean
+
+
+df <- dummy_cols(data, select_columns = c("gender", "bmi_binned2", "smoking_status", "diabetes2"), remove_selected_columns = TRUE)
+
+
+df <- df[!is.na(df$Insulin), ]
+
+df$Insulin_v2 <- log(df$Insulin)
+df$Insulin_v3 <- (df$Insulin_v2 - mean(df$Insulin_v2)) / sd(df$Insulin_v2)
+
+
+#### regression model 
+all_predictors <- c('age', 'gender_Male',
+                'bmi_binned2_30.0_inf', 'bmi_binned2_25.0_30.0', 'bmi_binned2_inf_18.5',
+                'smoking_status_Current', 'smoking_status_Former',
+                'diabetes2_Yes', 'NMDS1')
+formula <- as.formula(paste("Insulin_v3 ~", paste(all_predictors, collapse = " + ")))
+
+# Run the linear regression model
+model <- lm(formula, data = df)
+
+# Print the summary of the model
+summary(model)
+
+
+```
+
+
+
+
+
+```{r}
+
+library(tidyverse)
+library(vegan)
+library(ggplot2)
+
+#Read data, NMDS FOR diabetes for Diabetes classification
+microBeta <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\processing_4_microbiome_new\\microbiome_combine_806row_bray_curtis.csv")
+label <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\microbiome_allvariable_806_original.csv")
+label <- label %>% select(all_of(c('sampleID', 'diabetes2')))
+
+
+names(microBeta)[names(microBeta) == "X"] <- "sampleID"
+microBeta$sampleID <- as.character(microBeta$sampleID)
+
+micro_merge <- merge(microBeta, label, by = "sampleID", all.y = FALSE)
+
+#Select rows and columns from the beta diversity matrix
+colsel <- paste("X", micro_merge$sampleID, sep="")
+rowsel <- micro_merge$sampleID
+
+coloverlap <- intersect(colsel, colnames(microBeta))
+rowoverlap <- intersect(rowsel, microBeta$sampleID)
+
+microBeta_sel <- microBeta[microBeta$sampleID %in% rowoverlap , c(coloverlap)]
+
+#Find the row number where value = 0 for each column
+zero_rows <- numeric(806)
+
+for(i in 1:806){
+  zero_rows[i] <- which(microBeta_sel[, i] == 0)
+}
+
+
+# Create dataset for NMDS
+dist_str <- vegdist(microBeta_sel, method="bray")
+
+###NMDS analysis
+set.seed(1993)
+#nmds <- metaMDS(dist_str, autotransform = FALSE)
+nmds_w <- metaMDS(dist_str)
+
+###Create new dataset after NMDS plot
+#nmds_points$sampleID <- as.character(nmds_points$sampleID)
+#nmds_points <- scores(nmds_w) %>% as_tibble(rownames = "sampleID")
+#nmds_points[zero_rows, ]$sampleID <-  as.numeric(substring(colnames(microBeta_sel), 2))
+
+# Create new dataset after NMDS plot
+nmds_points <- scores(nmds_w) %>% as_tibble(rownames = "sampleID")
+nmds_points$sampleID <- as.character(nmds_points$sampleID)
+# Assign numeric sample IDs to zero_rows
+sample_ids_numeric <- as.character(as.numeric(substring(colnames(microBeta_sel)[-1], 2)))
+
+
+# Make sure zero_rows is a vector of correct indices
+zero_rows <- as.integer(zero_rows)
+
+for(i in 1:length(zero_rows)){
+  if(!is.na(zero_rows[i])){
+    nmds_points$sampleID[zero_rows[i]] <- sample_ids_numeric[i]
+  }
+}
+
+# Convert sampleID in micro_merge to character
+micro_merge$sampleID <- as.character(micro_merge$sampleID)
+
+
+nmds_df <- nmds_points %>% 
+  inner_join(., micro_merge, by="sampleID") 
+
+# Create bins for Diabetes2, excluding NA values
+nmds_df <- nmds_df %>%
+  mutate(Diabetes_status = case_when(
+    diabetes2 == "I don't know" ~ "Missing",
+    diabetes2 == "I prefer not to answer" ~ "Missing",
+    diabetes2 == "" ~ "Missing",  # Ensure empty strings are replaced
+    is.na(diabetes2) ~ "Missing",
+    TRUE ~ as.character(diabetes2)
+  ))
+
+
+#Plot
+custom_colors <- c("Missing" = "grey", "No" = "green",  "Yes" = "red")
+
+diabetes_nmdsplot <- ggplot(nmds_df, aes(x = NMDS1, y = NMDS2, color = as.factor(Diabetes_status), fill = as.factor(Diabetes_status))) +
+  geom_point() + 
+  stat_ellipse(type = "t", level = 0.95, geom = "polygon", alpha = 0.2) +
+  scale_color_manual(values = custom_colors) +
+  scale_fill_manual(values = custom_colors) +
+  theme_minimal() +
+  labs(title = "Oral microbiome composition according to diabetes status", color = "Diabetes status", fill = "Diabetes status") +
+  theme(
+    panel.grid = element_blank(),          # Remove grid
+    panel.border = element_rect(color = "black", fill = NA),  # Add lines for both axes
+    plot.title = element_text(hjust = 0.5, size=18), # Center the title
+    legend.position = c(0.06, 0.99),         # Place legend in the upper right corner
+    legend.justification = c(0, 1),         # Adjust legend anchor point
+    legend.text = element_text(size = 7), # Adjust legend text size
+    legend.title = element_text(size = 8), # Adjust legend title size
+    legend.key.size = unit(0.8, "cm"),   # Adjust size of legend keys
+    legend.spacing.x = unit(0.6, "cm"),     # Adjust horizontal spacing between legend items
+    legend.spacing.y = unit(0.6, "cm")      # Adjust vertical spacing between legend items
+  ) 
+# Print the plot
+print(diabetes_nmdsplot)
+
+# Save the plot
+#ggsave("nmdsplot_Diabetes_status.png", plot = nmdsplot, width = 10, height = 6, units = "in", bg = "white")
+
+
+
+```
+
+
+
+
+```{r}
+library(tidyverse)
+library(vegan)
+library(ggplot2)
+
+#Read data,  NMDS &  beta diversity for Ghrelin
+microBeta <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\processing_4_microbiome_new\\microbiome_combine_806row_bray_curtis.csv")
+label <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\microbiome_allvariable_806_original.csv")
+label <- label %>% select(all_of(c('sampleID', 'Ghrelin')))
+
+
+names(microBeta)[names(microBeta) == "X"] <- "sampleID"
+microBeta$sampleID <- as.character(microBeta$sampleID)
+
+micro_merge <- merge(microBeta, label, by = "sampleID", all.y = FALSE)
+
+#Select rows and columns from the beta diversity matrix
+colsel <- paste("X", micro_merge$sampleID, sep="")
+rowsel <- micro_merge$sampleID
+
+coloverlap <- intersect(colsel, colnames(microBeta))
+rowoverlap <- intersect(rowsel, microBeta$sampleID)
+
+microBeta_sel <- microBeta[microBeta$sampleID %in% rowoverlap , c(coloverlap)]
+
+#Find the row number where value = 0 for each column
+zero_rows <- numeric(806)
+
+for(i in 1:806){
+  zero_rows[i] <- which(microBeta_sel[, i] == 0)
+}
+
+
+# Create dataset for NMDS
+dist_str <- vegdist(microBeta_sel, method="bray")
+
+###NMDS analysis
+set.seed(1993)
+#nmds <- metaMDS(dist_str, autotransform = FALSE)
+nmds_w <- metaMDS(dist_str)
+
+###Create new dataset after NMDS plot
+#nmds_points$sampleID <- as.character(nmds_points$sampleID)
+#nmds_points <- scores(nmds_w) %>% as_tibble(rownames = "sampleID")
+#nmds_points[zero_rows, ]$sampleID <-  as.numeric(substring(colnames(microBeta_sel), 2))
+
+# Create new dataset after NMDS plot
+nmds_points <- scores(nmds_w) %>% as_tibble(rownames = "sampleID")
+nmds_points$sampleID <- as.character(nmds_points$sampleID)
+# Assign numeric sample IDs to zero_rows
+sample_ids_numeric <- as.character(as.numeric(substring(colnames(microBeta_sel)[-1], 2)))
+
+
+# Make sure zero_rows is a vector of correct indices
+zero_rows <- as.integer(zero_rows)
+
+for(i in 1:length(zero_rows)){
+  if(!is.na(zero_rows[i])){
+    nmds_points$sampleID[zero_rows[i]] <- sample_ids_numeric[i]
+  }
+}
+
+# Convert sampleID in micro_merge to character
+micro_merge$sampleID <- as.character(micro_merge$sampleID)
+
+
+nmds_df <- nmds_points %>% 
+  inner_join(., micro_merge, by="sampleID") 
+
+nmds_df$Ghrelin <- as.numeric(nmds_df$Ghrelin)
+# Create bins for Ghrelin, excluding NA values
+nmds_df$Ghrelin_bin <- cut(nmds_df$Ghrelin,
+                            breaks = quantile(nmds_df$Ghrelin, probs = seq(0, 1, by = 0.25), na.rm = TRUE),
+                            include.lowest = TRUE,
+                            labels = c("Low", "Medium-Low", "Medium-High", "High"))
+# Assign 'missing' to NA values
+nmds_df$Ghrelin_bin[is.na(nmds_df$Ghrelin)] <- "Missing"
+# Convert to a factor to ensure the order of levels
+nmds_df$Ghrelin_bin <- factor(nmds_df$Ghrelin_bin, levels = c("Low", "Medium-Low", "Medium-High", "High", "Missing"))
+nmds_df$Ghrelin_bin[is.na(nmds_df$Ghrelin_bin)] <- "Missing"
+
+
+#Plot
+custom_colors <- c("Low" = "blue", "Medium-Low" = "green", "Medium-High" = "yellow", "High" = "red", "Missing" = "grey")
+
+Ghrelin_nmdsplot <- ggplot(nmds_df, aes(x = NMDS1, y = NMDS2, color = as.factor(Ghrelin_bin), fill = as.factor(Ghrelin_bin))) +
+  geom_point() + 
+  stat_ellipse(type = "t", level = 0.95, geom = "polygon", alpha = 0.2) +
+  scale_color_manual(values = custom_colors) +
+  scale_fill_manual(values = custom_colors) +
+  theme_minimal() +
+  labs(title = "Oral microbiome composition according to Ghrelin Bin", color = "Ghrelin Bin", fill = "Ghrelin Bin") +
+  theme(
+    panel.grid = element_blank(),          # Remove grid
+    panel.border = element_rect(color = "black", fill = NA),  # Add lines for both axes
+    plot.title = element_text(hjust = 0.5, size=18), # Center the title
+    legend.position = c(0.06, 0.99),         # Place legend in the upper right corner
+    legend.justification = c(0, 1),         # Adjust legend anchor point
+    legend.text = element_text(size = 7), # Adjust legend text size
+    legend.title = element_text(size = 8), # Adjust legend title size
+    legend.key.size = unit(0.8, "cm"),   # Adjust size of legend keys
+    legend.spacing.x = unit(0.6, "cm"),     # Adjust horizontal spacing between legend items
+    legend.spacing.y = unit(0.6, "cm")      # Adjust vertical spacing between legend items
+  ) 
+
+# Print the plot
+print(Ghrelin_nmdsplot)
+
+library(dplyr)
+library(fastDummies)
+
+### beta diversity regression for Ghrelin
+
+#Read data, beta diversity
+origin <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\microbiome_allvariable_806_original.csv")
+
+origin <- origin %>% select(all_of(c('sampleID', 'age', 'gender', 'bmi', 'smoking_status', 'diabetes2', 'Ghrelin')))
+
+data <- merge(nmds_points, origin, by = "sampleID", all.y = FALSE)
+
+# Define cut points
+cutPoints <- c(18.5, 25, 30)
+subset_data <- data[!is.na(data$bmi),]
+subset_data$bmi_binned2 <- cut(subset_data$bmi, breaks = c(-Inf, cutPoints, Inf), labels = FALSE)
+subset_data$bmi_binned2 <- as.character(subset_data$bmi_binned2)
+missing_data <- data[is.na(data$bmi),]
+missing_data$bmi_binned2 <- "missing"
+data <- rbind(subset_data, missing_data)
+new_labels <- c(
+  "inf_18.5",
+  "18.5_25.0",
+  "25.0_30.0",
+  "30.0_inf",
+  "missing"
+)
+data$bmi_binned2 <- factor(data$bmi_binned2, labels = new_labels)
+table(data$bmi_binned2)
+
+data$gender <- as.character(data$gender)
+data$gender[data$gender == ""] <- "missing"
+table(data$gender)
+
+data$smoking_status <- as.character(data$smoking_status)
+data$smoking_status[data$smoking_status == ""] <- "missing"
+table(data$smoking_status)
+
+data$diabetes2 <- as.character(data$diabetes2)
+data$diabetes2[data$diabetes2 %in% c("I don't know", "I prefer not to answer")] <- "missing"
+data$diabetes2[data$diabetes2 == ""] <- "missing"
+table(data$diabetes2)
+
+age_mean <- mean(data$age, na.rm = TRUE)
+# Fill missing values in the 'age' column with the mean
+data$age[is.na(data$age)] <- age_mean
+
+
+df <- dummy_cols(data, select_columns = c("gender", "bmi_binned2", "smoking_status", "diabetes2"), remove_selected_columns = TRUE)
+
+
+df <- df[!is.na(df$Ghrelin), ]
+
+df$Ghrelin_v2 <- log(df$Ghrelin)
+df$Ghrelin_v3 <- (df$Ghrelin_v2 - mean(df$Ghrelin_v2)) / sd(df$Ghrelin_v2)
+
+
+#### regression model 
+all_predictors <- c('age', 'gender_Male',
+                'bmi_binned2_30.0_inf', 'bmi_binned2_25.0_30.0', 'bmi_binned2_inf_18.5',
+                'smoking_status_Current', 'smoking_status_Former',
+                'diabetes2_Yes', 'NMDS1')
+formula <- as.formula(paste("Ghrelin_v3 ~", paste(all_predictors, collapse = " + ")))
+
+# Run the linear regression model
+model <- lm(formula, data = df)
+
+# Print the summary of the model
+summary(model)
+
+
+```
+
+```{r}
+library(tidyverse)
+library(vegan)
+library(ggplot2)
+
+#Read data,  NMDS &  beta diversity for PM2.5 M12
+microBeta <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\processing_4_microbiome_new\\microbiome_combine_806row_bray_curtis.csv")
+label <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\microbiome_allvariable_806_original.csv")
+label <- label %>% select(all_of(c('sampleID', 'M12')))
+
+
+names(microBeta)[names(microBeta) == "X"] <- "sampleID"
+microBeta$sampleID <- as.character(microBeta$sampleID)
+
+micro_merge <- merge(microBeta, label, by = "sampleID", all.y = FALSE)
+
+#Select rows and columns from the beta diversity matrix
+colsel <- paste("X", micro_merge$sampleID, sep="")
+rowsel <- micro_merge$sampleID
+
+coloverlap <- intersect(colsel, colnames(microBeta))
+rowoverlap <- intersect(rowsel, microBeta$sampleID)
+
+microBeta_sel <- microBeta[microBeta$sampleID %in% rowoverlap , c(coloverlap)]
+
+#Find the row number where value = 0 for each column
+zero_rows <- numeric(806)
+
+for(i in 1:806){
+  zero_rows[i] <- which(microBeta_sel[, i] == 0)
+}
+
+
+# Create dataset for NMDS
+dist_str <- vegdist(microBeta_sel, method="bray")
+
+###NMDS analysis
+set.seed(1993)
+#nmds <- metaMDS(dist_str, autotransform = FALSE)
+nmds_w <- metaMDS(dist_str)
+
+###Create new dataset after NMDS plot
+#nmds_points$sampleID <- as.character(nmds_points$sampleID)
+#nmds_points <- scores(nmds_w) %>% as_tibble(rownames = "sampleID")
+#nmds_points[zero_rows, ]$sampleID <-  as.numeric(substring(colnames(microBeta_sel), 2))
+
+# Create new dataset after NMDS plot
+nmds_points <- scores(nmds_w) %>% as_tibble(rownames = "sampleID")
+nmds_points$sampleID <- as.character(nmds_points$sampleID)
+# Assign numeric sample IDs to zero_rows
+sample_ids_numeric <- as.character(as.numeric(substring(colnames(microBeta_sel)[-1], 2)))
+
+
+# Make sure zero_rows is a vector of correct indices
+zero_rows <- as.integer(zero_rows)
+
+for(i in 1:length(zero_rows)){
+  if(!is.na(zero_rows[i])){
+    nmds_points$sampleID[zero_rows[i]] <- sample_ids_numeric[i]
+  }
+}
+
+# Convert sampleID in micro_merge to character
+micro_merge$sampleID <- as.character(micro_merge$sampleID)
+
+
+nmds_df <- nmds_points %>% 
+  inner_join(., micro_merge, by="sampleID") 
+
+nmds_df$M12 <- as.numeric(nmds_df$M12)
+# Create bins for M12, excluding NA values
+nmds_df$M12_bin <- cut(nmds_df$M12,
+                            breaks = quantile(nmds_df$M12, probs = seq(0, 1, by = 0.25), na.rm = TRUE),
+                            include.lowest = TRUE,
+                            labels = c("Low", "Medium-Low", "Medium-High", "High"))
+# Assign 'missing' to NA values
+nmds_df$M12_bin[is.na(nmds_df$M12)] <- "Missing"
+# Convert to a factor to ensure the order of levels
+nmds_df$M12_bin <- factor(nmds_df$M12_bin, levels = c("Low", "Medium-Low", "Medium-High", "High", "Missing"))
+nmds_df$M12_bin[is.na(nmds_df$M12_bin)] <- "Missing"
+
+
+#Plot
+custom_colors <- c("Low" = "blue", "Medium-Low" = "green", "Medium-High" = "yellow", "High" = "red", "Missing" = "grey")
+
+M12_nmdsplot <- ggplot(nmds_df, aes(x = NMDS1, y = NMDS2, color = as.factor(M12_bin), fill = as.factor(M12_bin))) +
+  geom_point() + 
+  stat_ellipse(type = "t", level = 0.95, geom = "polygon", alpha = 0.2) +
+  scale_color_manual(values = custom_colors) +
+  scale_fill_manual(values = custom_colors) +
+  theme_minimal() +
+  labs(title = "Oral microbiome composition according to PM 2.5 Bin", color = "M12 Bin", fill = "M12 Bin") +
+  theme(
+    panel.grid = element_blank(),          # Remove grid
+    panel.border = element_rect(color = "black", fill = NA),  # Add lines for both axes
+    plot.title = element_text(hjust = 0.5, size=18), # Center the title
+    legend.position = c(0.06, 0.99),         # Place legend in the upper right corner
+    legend.justification = c(0, 1),         # Adjust legend anchor point
+    legend.text = element_text(size = 7), # Adjust legend text size
+    legend.title = element_text(size = 8), # Adjust legend title size
+    legend.key.size = unit(0.8, "cm"),   # Adjust size of legend keys
+    legend.spacing.x = unit(0.6, "cm"),     # Adjust horizontal spacing between legend items
+    legend.spacing.y = unit(0.6, "cm")      # Adjust vertical spacing between legend items
+  ) 
+
+# Print the plot
+print(M12_nmdsplot)
+
+library(dplyr)
+library(fastDummies)
+
+### beta diversity regression for M12
+
+#Read data, beta diversity
+origin <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\microbiome_allvariable_806_original.csv")
+
+origin <- origin %>% select(all_of(c('sampleID', 'age', 'gender', 'bmi', 'smoking_status', 'diabetes2', 'M12')))
+
+data <- merge(nmds_points, origin, by = "sampleID", all.y = FALSE)
+
+# Define cut points
+cutPoints <- c(18.5, 25, 30)
+subset_data <- data[!is.na(data$bmi),]
+subset_data$bmi_binned2 <- cut(subset_data$bmi, breaks = c(-Inf, cutPoints, Inf), labels = FALSE)
+subset_data$bmi_binned2 <- as.character(subset_data$bmi_binned2)
+missing_data <- data[is.na(data$bmi),]
+missing_data$bmi_binned2 <- "missing"
+data <- rbind(subset_data, missing_data)
+new_labels <- c(
+  "inf_18.5",
+  "18.5_25.0",
+  "25.0_30.0",
+  "30.0_inf",
+  "missing"
+)
+data$bmi_binned2 <- factor(data$bmi_binned2, labels = new_labels)
+table(data$bmi_binned2)
+
+data$gender <- as.character(data$gender)
+data$gender[data$gender == ""] <- "missing"
+table(data$gender)
+
+data$smoking_status <- as.character(data$smoking_status)
+data$smoking_status[data$smoking_status == ""] <- "missing"
+table(data$smoking_status)
+
+data$diabetes2 <- as.character(data$diabetes2)
+data$diabetes2[data$diabetes2 %in% c("I don't know", "I prefer not to answer")] <- "missing"
+data$diabetes2[data$diabetes2 == ""] <- "missing"
+table(data$diabetes2)
+
+age_mean <- mean(data$age, na.rm = TRUE)
+# Fill missing values in the 'age' column with the mean
+data$age[is.na(data$age)] <- age_mean
+
+
+df <- dummy_cols(data, select_columns = c("gender", "bmi_binned2", "smoking_status", "diabetes2"), remove_selected_columns = TRUE)
+
+
+df <- df[!is.na(df$M12), ]
+
+#df$M12_v2 <- log(df$M12)
+#df$M12_v3 <- (df$M12_v2 - mean(df$M12_v2)) / sd(df$M12_v2)
+
+
+#### regression model 
+all_predictors <- c('age', 'gender_Male',
+                'bmi_binned2_30.0_inf', 'bmi_binned2_25.0_30.0', 'bmi_binned2_inf_18.5',
+                'smoking_status_Current', 'smoking_status_Former',
+                'diabetes2_Yes', 'NMDS1')
+formula <- as.formula(paste("M12 ~", paste(all_predictors, collapse = " + ")))
+
+# Run the linear regression model
+model <- lm(formula, data = df)
+
+# Print the summary of the model
+summary(model)
+
+
+
+```
+
+
+
+
+##### Shannon diversity Regression
+
+```{r}
+### shannon diversity regression for Resistin
+
+#Read data, beta diversity
+shannon <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\processing_4_microbiome_new\\microbiome_combine_806row_485col_shannon.csv")
+origin <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\microbiome_allvariable_806_original.csv")
+
+origin <- origin %>% select(all_of(c('sampleID', 'age', 'gender', 'bmi', 'smoking_status', 'diabetes2', 'Resistin')))
+
+data <- merge(shannon, origin, by = "sampleID", all.y = FALSE)
+
+# Define cut points
+cutPoints <- c(18.5, 25, 30)
+subset_data <- data[!is.na(data$bmi),]
+subset_data$bmi_binned2 <- cut(subset_data$bmi, breaks = c(-Inf, cutPoints, Inf), labels = FALSE)
+subset_data$bmi_binned2 <- as.character(subset_data$bmi_binned2)
+missing_data <- data[is.na(data$bmi),]
+missing_data$bmi_binned2 <- "missing"
+data <- rbind(subset_data, missing_data)
+new_labels <- c(
+  "inf_18.5",
+  "18.5_25.0",
+  "25.0_30.0",
+  "30.0_inf",
+  "missing"
+)
+data$bmi_binned2 <- factor(data$bmi_binned2, labels = new_labels)
+table(data$bmi_binned2)
+
+data$gender <- as.character(data$gender)
+data$gender[data$gender == ""] <- "missing"
+table(data$gender)
+
+data$smoking_status <- as.character(data$smoking_status)
+data$smoking_status[data$smoking_status == ""] <- "missing"
+table(data$smoking_status)
+
+data$diabetes2 <- as.character(data$diabetes2)
+data$diabetes2[data$diabetes2 %in% c("I don't know", "I prefer not to answer")] <- "missing"
+data$diabetes2[data$diabetes2 == ""] <- "missing"
+table(data$diabetes2)
+
+age_mean <- mean(data$age, na.rm = TRUE)
+# Fill missing values in the 'age' column with the mean
+data$age[is.na(data$age)] <- age_mean
+
+
+df <- dummy_cols(data, select_columns = c("gender", "bmi_binned2", "smoking_status", "diabetes2"), remove_selected_columns = TRUE)
+
+
+df <- df[!is.na(df$Resistin), ]
+
+df$Resistin_v2 <- log(df$Resistin)
+df$Resistin_v3 <- (df$Resistin_v2 - mean(df$Resistin_v2)) / sd(df$Resistin_v2)
+
+
+#### regression model 
+all_predictors <- c('age', 'gender_Male',
+                'bmi_binned2_30.0_inf', 'bmi_binned2_25.0_30.0', 'bmi_binned2_inf_18.5',
+                'smoking_status_Current', 'smoking_status_Former',
+                'diabetes2_Yes', 'Shannon_Diversity')
+formula <- as.formula(paste("Resistin_v3 ~", paste(all_predictors, collapse = " + ")))
+
+# Run the linear regression model
+resshanon_model <- lm(formula, data = df)
+
+# Print the summary of the model
+summary(resshanon_model)
+
+```
+
+
+
+```{r}
+### shannon diversity regression for Insulin
+
+shannon <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\processing_4_microbiome_new\\microbiome_combine_806row_485col_shannon.csv")
+origin <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\microbiome_allvariable_806_original.csv")
+
+origin <- origin %>% select(all_of(c('sampleID', 'age', 'gender', 'bmi', 'smoking_status', 'diabetes2', 'Insulin')))
+
+data <- merge(shannon, origin, by = "sampleID", all.y = FALSE)
+
+# Define cut points
+cutPoints <- c(18.5, 25, 30)
+subset_data <- data[!is.na(data$bmi),]
+subset_data$bmi_binned2 <- cut(subset_data$bmi, breaks = c(-Inf, cutPoints, Inf), labels = FALSE)
+subset_data$bmi_binned2 <- as.character(subset_data$bmi_binned2)
+missing_data <- data[is.na(data$bmi),]
+missing_data$bmi_binned2 <- "missing"
+data <- rbind(subset_data, missing_data)
+new_labels <- c(
+  "inf_18.5",
+  "18.5_25.0",
+  "25.0_30.0",
+  "30.0_inf",
+  "missing"
+)
+data$bmi_binned2 <- factor(data$bmi_binned2, labels = new_labels)
+table(data$bmi_binned2)
+
+data$gender <- as.character(data$gender)
+data$gender[data$gender == ""] <- "missing"
+table(data$gender)
+
+data$smoking_status <- as.character(data$smoking_status)
+data$smoking_status[data$smoking_status == ""] <- "missing"
+table(data$smoking_status)
+
+data$diabetes2 <- as.character(data$diabetes2)
+data$diabetes2[data$diabetes2 %in% c("I don't know", "I prefer not to answer")] <- "missing"
+data$diabetes2[data$diabetes2 == ""] <- "missing"
+table(data$diabetes2)
+
+age_mean <- mean(data$age, na.rm = TRUE)
+# Fill missing values in the 'age' column with the mean
+data$age[is.na(data$age)] <- age_mean
+
+
+df <- dummy_cols(data, select_columns = c("gender", "bmi_binned2", "smoking_status", "diabetes2"), remove_selected_columns = TRUE)
+
+
+df <- df[!is.na(df$Insulin), ]
+
+df$Insulin_v2 <- log(df$Insulin)
+df$Insulin_v3 <- (df$Insulin_v2 - mean(df$Insulin_v2)) / sd(df$Insulin_v2)
+
+
+#### regression model 
+all_predictors <- c('age', 'gender_Male',
+                'bmi_binned2_30.0_inf', 'bmi_binned2_25.0_30.0', 'bmi_binned2_inf_18.5',
+                'smoking_status_Current', 'smoking_status_Former',
+                'diabetes2_Yes', 'Shannon_Diversity')
+formula <- as.formula(paste("Insulin_v3 ~", paste(all_predictors, collapse = " + ")))
+
+# Run the linear regression model
+insshannon_model <- lm(formula, data = df)
+
+# Print the summary of the model
+summary(insshannon_model)
+
+```
+
+```{r}
+### shannon diversity regression for Ghrelin
+
+shannon <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\processing_4_microbiome_new\\microbiome_combine_806row_485col_shannon.csv")
+origin <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\microbiome_allvariable_806_original.csv")
+
+origin <- origin %>% select(all_of(c('sampleID', 'age', 'gender', 'bmi', 'smoking_status', 'diabetes2', 'Ghrelin')))
+
+data <- merge(shannon, origin, by = "sampleID", all.y = FALSE)
+
+# Define cut points
+cutPoints <- c(18.5, 25, 30)
+subset_data <- data[!is.na(data$bmi),]
+subset_data$bmi_binned2 <- cut(subset_data$bmi, breaks = c(-Inf, cutPoints, Inf), labels = FALSE)
+subset_data$bmi_binned2 <- as.character(subset_data$bmi_binned2)
+missing_data <- data[is.na(data$bmi),]
+missing_data$bmi_binned2 <- "missing"
+data <- rbind(subset_data, missing_data)
+new_labels <- c(
+  "inf_18.5",
+  "18.5_25.0",
+  "25.0_30.0",
+  "30.0_inf",
+  "missing"
+)
+data$bmi_binned2 <- factor(data$bmi_binned2, labels = new_labels)
+table(data$bmi_binned2)
+
+data$gender <- as.character(data$gender)
+data$gender[data$gender == ""] <- "missing"
+table(data$gender)
+
+data$smoking_status <- as.character(data$smoking_status)
+data$smoking_status[data$smoking_status == ""] <- "missing"
+table(data$smoking_status)
+
+data$diabetes2 <- as.character(data$diabetes2)
+data$diabetes2[data$diabetes2 %in% c("I don't know", "I prefer not to answer")] <- "missing"
+data$diabetes2[data$diabetes2 == ""] <- "missing"
+table(data$diabetes2)
+
+age_mean <- mean(data$age, na.rm = TRUE)
+# Fill missing values in the 'age' column with the mean
+data$age[is.na(data$age)] <- age_mean
+
+
+df <- dummy_cols(data, select_columns = c("gender", "bmi_binned2", "smoking_status", "diabetes2"), remove_selected_columns = TRUE)
+
+
+df <- df[!is.na(df$Ghrelin), ]
+
+df$Ghrelin_v2 <- log(df$Ghrelin)
+df$Ghrelin_v3 <- (df$Ghrelin_v2 - mean(df$Ghrelin_v2)) / sd(df$Ghrelin_v2)
+
+
+#### regression model 
+all_predictors <- c('age', 'gender_Male',
+                'bmi_binned2_30.0_inf', 'bmi_binned2_25.0_30.0', 'bmi_binned2_inf_18.5',
+                'smoking_status_Current', 'smoking_status_Former',
+                'diabetes2_Yes', 'Shannon_Diversity')
+formula <- as.formula(paste("Ghrelin_v3 ~", paste(all_predictors, collapse = " + ")))
+
+# Run the linear regression model
+ghreshannon_model <- lm(formula, data = df)
+
+# Print the summary of the model
+summary(ghreshannon_model)
+
+```
+
+
+```{r}
+### shannon diversity regression for PM2.5
+
+shannon <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\processing_4_microbiome_new\\microbiome_combine_806row_485col_shannon.csv")
+origin <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\microbiome_allvariable_806_original.csv")
+
+origin <- origin %>% select(all_of(c('sampleID', 'age', 'gender', 'bmi', 'smoking_status', 'diabetes2', 'M12')))
+
+data <- merge(shannon, origin, by = "sampleID", all.y = FALSE)
+
+# Define cut points
+cutPoints <- c(18.5, 25, 30)
+subset_data <- data[!is.na(data$bmi),]
+subset_data$bmi_binned2 <- cut(subset_data$bmi, breaks = c(-Inf, cutPoints, Inf), labels = FALSE)
+subset_data$bmi_binned2 <- as.character(subset_data$bmi_binned2)
+missing_data <- data[is.na(data$bmi),]
+missing_data$bmi_binned2 <- "missing"
+data <- rbind(subset_data, missing_data)
+new_labels <- c(
+  "inf_18.5",
+  "18.5_25.0",
+  "25.0_30.0",
+  "30.0_inf",
+  "missing"
+)
+data$bmi_binned2 <- factor(data$bmi_binned2, labels = new_labels)
+table(data$bmi_binned2)
+
+data$gender <- as.character(data$gender)
+data$gender[data$gender == ""] <- "missing"
+table(data$gender)
+
+data$smoking_status <- as.character(data$smoking_status)
+data$smoking_status[data$smoking_status == ""] <- "missing"
+table(data$smoking_status)
+
+data$diabetes2 <- as.character(data$diabetes2)
+data$diabetes2[data$diabetes2 %in% c("I don't know", "I prefer not to answer")] <- "missing"
+data$diabetes2[data$diabetes2 == ""] <- "missing"
+table(data$diabetes2)
+
+age_mean <- mean(data$age, na.rm = TRUE)
+# Fill missing values in the 'age' column with the mean
+data$age[is.na(data$age)] <- age_mean
+
+
+df <- dummy_cols(data, select_columns = c("gender", "bmi_binned2", "smoking_status", "diabetes2"), remove_selected_columns = TRUE)
+
+
+df <- df[!is.na(df$M12), ]
+
+#df$M12_v2 <- log(df$M12)
+#df$M12_v3 <- (df$M12_v2 - mean(df$M12_v2)) / sd(df$M12_v2)
+
+
+#### regression model 
+all_predictors <- c('age', 'gender_Male',
+                'bmi_binned2_30.0_inf', 'bmi_binned2_25.0_30.0', 'bmi_binned2_inf_18.5',
+                'smoking_status_Current', 'smoking_status_Former',
+                'diabetes2_Yes', 'Shannon_Diversity')
+formula <- as.formula(paste("M12 ~", paste(all_predictors, collapse = " + ")))
+
+# Run the linear regression model
+pm25shannon_model <- lm(formula, data = df)
+
+# Print the summary of the model
+summary(pm25shannon_model)
+
+
+```
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

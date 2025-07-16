@@ -1,0 +1,85 @@
+```{r}
+library(vegan)
+library(dplyr)
+
+# Load your dataset
+data <- read.csv('C:/Users/yuqingw1/Workfolder/ProcessingData/processing_4_microbiome_new/microbiome_combine_806row_485col.csv')
+
+#data <- data %>%library(dplyr)
+data <- data %>%
+  group_by(sampleID) %>%
+  summarise(across(everything(), mean, na.rm = TRUE))  # Change 'mean' to any function you need
+
+print(paste("Dimensions:", dim(data), "Rows:", nrow(data), "Columns:", ncol(data)))
+
+
+# Selecting the columns that contain species data, assuming 'sampleID' is not part of these
+cols <- setdiff(names(data), 'sampleID')
+x <- data[, cols]
+
+# Replace NaNs with zeros in the dataset x
+x[is.na(x)] <- 0
+
+# Calculating alpha diversity using Shannon index
+# Assuming 'groups' is defined if you need to group data; otherwise remove the 'groups' argument
+shannon_diversity <- diversity(x, index = "shannon", MARGIN = 1, base = exp(1))
+
+
+# Create a data frame to store and output the Shannon diversity results
+shannon_df <- data.frame(sampleID = data$sampleID, Shannon_Diversity = shannon_diversity)
+
+# Print the structure and head of the Shannon diversity data frame
+print(dim(shannon_df))  # Prints the dimensions of the data frame
+print(head(shannon_df)) # Prints the first few rows of the data frame
+
+
+# Save the Shannon diversity data frame to a CSV file
+write.csv(shannon_df,'C:/Users/yuqingw1/Workfolder/ProcessingData/processing_4_microbiome_new/microbiome_combine_806row_485col_shannon.csv', row.names = FALSE)
+```
+
+
+
+```{r}
+library(vegan)
+library(dplyr)
+
+# Load your dataset
+data <- read.csv('C:/Users/yuqingw1/Workfolder/ProcessingData/processing_4_microbiome_new/microbiome_combine_806row_485col.csv')
+
+
+data <- data %>%
+  group_by(sampleID) %>%
+  summarise(across(everything(), mean, na.rm = TRUE))  # Change 'mean' to any function you need
+
+print(paste("Dimensions:", dim(data), "Rows:", nrow(data), "Columns:", ncol(data)))
+
+
+# Selecting the columns that contain species data, assuming 'sampleID' is not part of these
+cols <- setdiff(names(data), 'sampleID')
+x <- data[, cols]
+
+# Replace NaNs with zeros in the dataset x
+x[is.na(x)] <- 0
+
+# Calculating beta diversity using Bray-Curtis dissimilarity
+bray_curtis_dissimilarity <- vegdist(x, method="bray", binary=FALSE, diag=FALSE, upper=FALSE, na.rm=FALSE)
+
+# Convert the distance object to a matrix
+bray_curtis_matrix <- as.matrix(bray_curtis_dissimilarity)
+
+# Set the row and column names of the matrix to sample IDs for clarity
+rownames(bray_curtis_matrix) <- colnames(bray_curtis_matrix) <- data$sampleID
+
+
+# Convert the matrix to a data frame for easier handling and saving
+bray_curtis_df <- as.data.frame(bray_curtis_matrix)
+#rownames(bray_curtis_df) <- gsub("X", "", rownames(bray_curtis_df))
+
+# Print the structure and head of the Shannon diversity data frame
+print(dim(bray_curtis_df))  # Prints the dimensions of the data frame
+print(head(bray_curtis_df)) # Prints the first few rows of the data frame
+
+
+# Save the Bray-Curtis dissimilarity data frame to a CSV file
+write.csv(bray_curtis_df, 'C:/Users/yuqingw1/Workfolder/ProcessingData/processing_4_microbiome_new/microbiome_combine_806row_485col_bray_curtis.csv', row.names = TRUE)
+```

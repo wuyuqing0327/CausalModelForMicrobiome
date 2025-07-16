@@ -1,0 +1,220 @@
+mummichog version: 1.0.10
+pwd: /Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/mummichog1
+user command: command_line.py -f /Users/yuqingwu/UChicago_MSDS/Part-time/BSD/Metabolic/microbiome_001.txt -o /Users/yuqingwu/UChicago_MSDS/Part-time/BSD/Metabolic/MummichogResult001/ -m positive -c 0.05
+
+
+Started @ Sat Aug 24 13:46:55 2024
+
+Loading metabolic network MFN_1.10.2...
+cpds with MW: 2016
+Got 620 significant features from 17193 references
+
+Pathway Analysis...
+query_set_size = 332 compounds
+total_feature_num = 1626 compounds
+Resampling, 100 permutations to estimate background ...
+
+Pathway background is estimated on 11900 random pathway values
+
+Modular Analysis, using 100 permutations ...
+
+Null distribution is estimated on 3676 random modules
+User data yield 29 network modules
+    - chosen CE7115 over CE2053,CE7112,CE5138,CE7088,CE5661,CE7114,CE7113,CE7115
+    - chosen CE7092 over CE6248,CE6247,CE7092,CE5662,CE2569,CE2568
+    - chosen CE6474 over CE5343,CE7172,CE6246,CE6240,CE7096,CE6251,CE5815,CE5944,CE5179,CE6474,CE2445,CE2446,CE2449
+    - chosen C05451 over C03594,C15519,C15610,C06340,C05451,C05500,C05502,C13550
+    - chosen C14826 over C14825,C14826,C14762
+    - chosen CE5928 over C05957,C05953,C05954,C05955,CE5535,CE5537,CE5925,CE5928
+    - chosen C16545 over C05011,C16545,C16544
+    - chosen C03091 over C00187,C03091
+    - chosen C02198 over C06315,C06314,C00584,C00427,C04654,C04853,C01312,C02198,C00696
+    - chosen CE5704 over CE5703,CE5704
+    - chosen CE7101 over CE6219,CE7101,CE5655
+    - chosen CE6473 over CE7090,CE7089,CE7085,CE7082,CE7081,CE6473,CE2084
+    - chosen vacccrn over elaidcrn,vacccrn,odecrn
+    - chosen CE6230 over CE6230,CE4988,CE4987,CE5350,CE5352
+    - chosen CE7093 over CE6234,CE4989,CE7093,CE5663,CE5828,CE5924,CE5929,CE5931
+    - chosen CE5848 over CE5848,CE7109,CE7110
+    - chosen C05454 over C05444,C05454
+    - chosen lnlncgcrn over lnlncacrn,lnlncgcrn
+    - chosen lnlccrn over lneldccrn,lnlccrn
+    - chosen C14827 over C14827,C04717
+    - chosen C16643 over C16578,C16643
+    - chosen C05962 over C05962,C05956
+    - chosen C16602 over C16602,C16601,C07496
+    - chosen C05139 over C18075,C05139
+    - chosen C04741 over C14814,C04843,C04741,C14782,C05959,C00639
+    - chosen C05446 over C05446,CE1272,CE0232
+    - chosen CE5527 over C14765,CE5526,CE5527
+    - chosen dcsptn1crn over dcsptn1crn,clpndcrn
+    - chosen CE5930 over CE2056,CE1447,CE5534,CE5533,CE5926,CE5930
+    - chosen CE6506 over CE2006,CE6506
+    - chosen C05284 over C05140,C05284
+    - chosen C05479 over C01953,C05479,C04042
+    - chosen CE5945 over CE6232,CE0955,CE5945
+    - chosen vacc over ocdcea,vacc
+    - chosen C01780 over C00762,C01780
+    - chosen CE7083 over CE5349,CE5304,CE7091,CE7097,CE4876,CE7084,CE7083,CE7080,CE5178,CE2567,CE2566,CE5721,CE4990,CE6508
+
+Got ActivityNetwork of 85 metabolites.
+
+Annotation was written to 
+/Users/yuqingwu/UChicago_MSDS/Part-time/BSD/Metabolic/MummichogResult001/tsv (.tsv and .xlsx)
+Pathway analysis report was written to 
+/Users/yuqingwu/UChicago_MSDS/Part-time/BSD/Metabolic/MummichogResult001/tsv (.tsv and .xlsx)
+
+Modular analysis report was written to
+/Users/yuqingwu/UChicago_MSDS/Part-time/BSD/Metabolic/MummichogResult001/tsv (.tsv and .xlsx)
+
+Inspected network report was written to
+/Users/yuqingwu/UChicago_MSDS/Part-time/BSD/Metabolic/MummichogResult001/tsv/InspectedNodes_ActivityNetwork.tsv
+
+Worksheet of top metabolites was written to
+/Users/yuqingwu/UChicago_MSDS/Part-time/BSD/Metabolic/MummichogResult001/tsv (.tsv and .xlsx)
+
+Exporting top modules to /Users/yuqingwu/UChicago_MSDS/Part-time/BSD/Metabolic/MummichogResult001/sif/...
+    - multiple match - C15610 - 213.172, 425.343
+    - multiple match - CE5848 - 334.1943, 304.2011
+    - multiple match - C00021 - 341.1409, 357.136
+    - multiple match - CE6248 - 334.2148, 370.2324
+    - multiple match - CE6234 - 354.2431, 318.2168
+    - multiple match - CE6246 - 354.2431, 318.2168
+    - multiple match - CE2211 - 302.2359, 302.2364
+    - multiple match - CE4989 - 354.2431, 318.2168
+    - multiple match - CE2056 - 368.2172, 296.1981, 368.2166
+    - multiple match - CE6219 - 415.3552, 455.3477
+    - multiple match - CE2053 - 352.2034, 368.2166, 278.1866, 418.2, 304.2011, 352.2069, 352.2041, 368.2172
+    - multiple match - CE0955 - 342.238, 302.2446, 334.2148, 302.2448, 370.2324, 302.2452
+    - multiple match - C05480 - 302.2359, 302.2364
+    - multiple match - C06315 - 371.2443, 371.2448
+    - multiple match - C06314 - 371.2443, 371.2448
+    - multiple match - elaidcrn - 427.365, 427.3646
+    - multiple match - C05963 - 371.2443, 370.2324, 371.2448, 186.1251
+    - multiple match - C05962 - 352.2034, 370.2324, 368.2166, 341.2327, 352.2041, 368.2172
+    - multiple match - C16321 - 312.226, 156.1151, 294.1953, 312.2271
+    - multiple match - C14814 - 356.248, 354.2431, 356.253
+    - multiple match - CE5947 - 368.2172, 368.2166
+    - multiple match - C01189 - 425.3145, 455.3477
+    - multiple match - C06125 - 892.6526, 891.6489
+    - multiple match - CE7047 - 415.3552, 484.3487, 418.3657, 398.3509
+    - multiple match - C15816 - 415.3552, 398.3509
+    - multiple match - CE2315 - 425.3145, 455.3477
+    - multiple match - C14825 - 296.2351, 296.2349, 280.2163
+    - multiple match - C14826 - 296.2351, 296.2349, 280.2163
+    - multiple match - C03594 - 213.172, 425.343
+    - multiple match - CE6247 - 334.2148, 370.2324
+    - multiple match - CE6240 - 354.2431, 318.2168
+    - multiple match - C03091 - 425.3145, 455.3477
+    - multiple match - vacccrn - 427.365, 427.3646
+    - multiple match - C01262 - 241.1284, 224.1027
+    - multiple match - C00427 - 371.2443, 371.2448
+    - multiple match - ocdcea - 282.2561, 300.2657, 282.2555
+    - multiple match - CE2446 - 354.2431, 318.2168
+    - multiple match - C15517 - 357.2788, 357.2779, 357.2784
+    - multiple match - lneldccrn - 423.3357, 425.343, 423.3351
+    - multiple match - C15519 - 213.172, 425.343
+    - multiple match - CE7109 - 334.1943, 304.2011
+    - multiple match - C15808 - 415.3552, 425.343
+    - multiple match - CE7092 - 334.2148, 370.2324
+    - multiple match - CE5815 - 354.2431, 318.2168
+    - multiple match - CE6579 - 538.4493, 280.2163, 539.4481
+    - multiple match - CE7096 - 354.2431, 318.2168
+    - multiple match - C13856 - 343.2601, 343.2613, 343.2622
+    - multiple match - CE6251 - 354.2431, 318.2168
+    - multiple match - C04654 - 371.2443, 371.2448
+    - multiple match - CE7144 - 221.1738, 373.3526
+    - multiple match - CE7145 - 408.2983, 472.3173
+    - multiple match - CE5849 - 310.1925, 318.2168
+    - multiple match - C04853 - 371.2443, 371.2448
+    - multiple match - C00881 - 160.1091, 192.0774
+    - multiple match - C04785 - 312.226, 156.1151, 294.1953, 312.2271
+    - multiple match - CE5944 - 354.2431, 318.2168
+    - multiple match - CE5945 - 342.238, 302.2446, 334.2148, 302.2448, 370.2324, 302.2452
+    - multiple match - CE5946 - 368.2172, 342.238, 340.2278, 368.2166
+    - multiple match - CE7088 - 352.2034, 368.2166, 278.1866, 418.2, 304.2011, 352.2069, 352.2041, 368.2172
+    - multiple match - lnlccrn - 423.3357, 425.343, 423.3351
+    - multiple match - C01312 - 371.2443, 371.2448
+    - multiple match - C14762 - 296.2351, 296.2349, 280.2163
+    - multiple match - C03845 - 425.3145, 455.3477
+    - multiple match - CE5179 - 354.2431, 318.2168
+    - multiple match - C00712 - 282.2561, 282.2555
+    - multiple match - q10h2 - 289.2407, 933.6959, 289.2408
+    - multiple match - C04843 - 356.248, 354.2431, 356.253
+    - multiple match - CE5343 - 354.2431, 318.2168
+    - multiple match - C02198 - 371.2443, 371.2448
+    - multiple match - C06340 - 213.172, 425.343
+    - multiple match - caro - 538.4493, 280.2163, 539.4481
+    - multiple match - C04741 - 356.248, 354.2431, 356.253
+    - multiple match - C14782 - 356.248, 354.2431, 356.253
+    - multiple match - C04530 - 483.377, 483.3777
+    - multiple match - C00187 - 425.3145, 455.3477
+    - multiple match - C00584 - 371.2443, 371.2448
+    - multiple match - CE2314 - 483.3777, 483.377
+    - multiple match - C04671 - 371.2443, 371.2448
+    - multiple match - C01753 - 483.377, 483.3777
+    - multiple match - C05011 - 446.1859, 352.2069, 352.2041, 352.2034
+    - multiple match - CE5661 - 352.2034, 368.2166, 278.1866, 418.2, 304.2011, 352.2069, 352.2041, 368.2172
+    - multiple match - CE5663 - 354.2431, 318.2168
+    - multiple match - CE5662 - 334.2148, 370.2324
+    - multiple match - CE6474 - 354.2431, 318.2168
+    - multiple match - CE5828 - 354.2431, 318.2168
+    - multiple match - C00270 - 292.0999, 310.1104
+    - multiple match - CE5787 - 342.238, 382.2278, 332.2552, 288.2291, 288.2292, 288.2294
+    - multiple match - C00272 - 310.1104, 196.1208
+    - multiple match - C02094 - 538.4493, 280.2163
+    - multiple match - C15780 - 415.3552, 398.3509
+    - multiple match - C15915 - 483.377, 483.3777
+    - multiple match - C16661 - 296.2351, 340.2278, 341.2327, 268.2038, 294.2235, 268.204, 296.2349
+    - multiple match - CE1447 - 368.2172, 296.1981, 368.2166
+    - multiple match - C05451 - 213.172, 425.343
+    - multiple match - C00696 - 371.2443, 371.2448
+    - multiple match - CE5017 - 289.2407, 933.6959, 289.2408
+    - multiple match - CE7112 - 352.2034, 368.2166, 278.1866, 418.2, 304.2011, 352.2069, 352.2041, 368.2172
+    - multiple match - CE5528 - 312.226, 156.1151, 294.1953, 312.2271
+    - multiple match - odecrn - 427.365, 427.3646
+    - multiple match - C05956 - 352.2034, 370.2324, 368.2166, 341.2327, 352.2041, 368.2172
+    - multiple match - C05959 - 356.248, 354.2431, 356.253
+    - multiple match - CE7093 - 354.2431, 318.2168
+    - multiple match - CE7172 - 354.2431, 318.2168
+    - multiple match - C03413 - 289.2407, 289.2408
+    - multiple match - hpdcacrn - 436.3406, 472.3173
+    - multiple match - C03246 - 214.0216, 214.0219
+    - multiple match - C05500 - 213.172, 425.343
+    - multiple match - C05502 - 213.172, 425.343
+    - multiple match - CE2569 - 334.2148, 370.2324
+    - multiple match - CE2568 - 334.2148, 370.2324
+    - multiple match - CE7115 - 352.2034, 368.2166, 278.1866, 418.2, 304.2011, 352.2069, 352.2041, 368.2172
+    - multiple match - CE7114 - 352.2034, 368.2166, 278.1866, 418.2, 304.2011, 352.2069, 352.2041, 368.2172
+    - multiple match - C01712 - 282.2561, 282.2555
+    - multiple match - CE7110 - 334.1943, 304.2011
+    - multiple match - CE7113 - 352.2034, 368.2166, 278.1866, 418.2, 304.2011, 352.2069, 352.2041, 368.2172
+    - multiple match - CE5534 - 368.2172, 296.1981, 368.2166
+    - multiple match - CE5533 - 368.2172, 296.1981, 368.2166
+    - multiple match - vacc - 282.2561, 300.2657, 282.2555
+    - multiple match - CE2445 - 354.2431, 318.2168
+    - multiple match - CE5926 - 368.2172, 296.1981, 368.2166
+    - multiple match - CE5924 - 354.2431, 318.2168
+    - multiple match - CE5929 - 354.2431, 318.2168
+    - multiple match - C04483 - 357.2788, 357.2779, 357.2784
+    - multiple match - CE5930 - 368.2172, 296.1981, 368.2166
+    - multiple match - CE6232 - 342.238, 302.2446, 334.2148, 302.2448, 370.2324, 302.2452
+    - multiple match - C16545 - 446.1859, 352.2069, 352.2041, 352.2034
+    - multiple match - C16544 - 446.1859, 352.2069, 352.2041, 352.2034
+    - multiple match - CE5655 - 415.3552, 455.3477
+    - multiple match - CE7101 - 415.3552, 455.3477
+    - multiple match - CE5138 - 352.2034, 368.2166, 278.1866, 418.2, 304.2011, 352.2069, 352.2041, 368.2172
+    - multiple match - C02528 - 357.2788, 357.2779, 357.2784
+    - multiple match - C16548 - 412.1911, 343.1961
+    - multiple match - C00639 - 356.248, 354.2431, 356.253
+    - multiple match - CE2449 - 354.2431, 318.2168
+    - multiple match - CE5931 - 354.2431, 318.2168
+    - multiple match - stcrn - 427.365, 429.3811, 427.3646
+    - multiple match - CE6185 - 338.1689, 180.0763
+    - multiple match - C13550 - 213.172, 425.343
+
+HTML report was written to
+/Users/yuqingwu/UChicago_MSDS/Part-time/BSD/Metabolic/MummichogResult001/result.html
+
+Finished @ Sat Aug 24 13:48:08 2024
+

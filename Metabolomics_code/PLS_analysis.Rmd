@@ -1,0 +1,264 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(spls)
+library(pls)
+library(vip)
+library(Matrix)
+
+#data <- read.csv('C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\Metabolomics.csv')
+
+
+# Define the list of microbiome columns (ylist)
+ylist <- paste0("UPDASV", sprintf("%03d", 1:485))
+# Define the list of metabolomics columns (xlist)
+xlist <- setdiff(names(data), c(ylist, "sampleID"))
+
+
+
+
+# Select the first microbiome column
+first_y <- ylist[1]
+predictors_sparse <- as.matrix(data[xlist])
+response <- as.numeric(data[[first_y]])
+
+
+# Set parameters for sPLS
+eta <- 0.1  # Sparsity parameter (adjust as necessary)
+K <- 2  # Number of components
+# Fit the sparse PLS model
+spls_model <- spls(predictors_sparse, response, K = K, eta = eta)
+# Print the summary of the sparse PLS model
+print(summary(spls_model))
+
+
+
+# Identify non-zero coefficients
+selected_indices <- which(spls_model$betahat != 0)
+# Subset data and projection based on selected indices
+selected_predictors <- predictors_sparse[, selected_indices]
+selected_loadings <- spls_model$projection
+
+# Check dimensions to ensure conformity
+cat("Dimensions of selected_predictors:\n")
+print(dim(selected_predictors))
+cat("Dimensions of selected_loadings:\n")
+print(dim(selected_loadings))
+
+
+# Calculate the scores using the selected predictors and loadings
+scores <- selected_predictors %*% selected_loadings
+# Calculate VIP scores
+calculate_vip_spls <- function(loadings, scores) {
+  p <- nrow(loadings)
+  ncomp <- ncol(loadings)
+  W <- loadings^2
+  H <- apply(scores, 2, function(x) sum(x^2))
+  vip <- sqrt(p * colSums(W * H) / sum(H))
+  return(vip)
+}
+
+# Calculate VIP scores
+vip_scores <- calculate_vip_spls(selected_loadings, scores)
+print(vip_scores)
+
+
+# Convert the selected_loadings to a dataframe
+selected_loadings_df <- as.data.frame(selected_loadings)
+rownames(selected_loadings_df) <- colnames(predictors_sparse)[selected_indices]
+
+# Extract Comp 1 coefficients
+comp1_loadings <- selected_loadings_df[, "Comp 1"]
+
+# Create a complete dataframe with all metabolomics features
+all_features <- data.frame(Feature = colnames(predictors_sparse), Comp1 = rep(0, ncol(predictors_sparse)))
+rownames(all_features) <- colnames(predictors_sparse)
+
+# Fill in the non-zero coefficients
+all_features[rownames(selected_loadings_df), "Comp1"] <- comp1_loadings
+
+# Ensure the dataframe has 19559 rows
+print(dim(all_features))
+
+
+```
+
+```{r}
+
+library(spls)
+library(pls)
+library(vip)
+library(Matrix)
+
+data <- read.csv('C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\Metabolomics.csv')
+
+# Define the list of microbiome columns (ylist)
+ylist <- paste0("UPDASV", sprintf("%03d", 1:485))
+# Define the list of metabolomics columns (xlist)
+xlist <- setdiff(names(data), c(ylist, "sampleID"))
+
+# Convert predictors to a matrix
+predictors_sparse <- as.matrix(data[xlist])
+# Initialize an empty dataframe to store results
+final_results <- data.frame(Feature = colnames(predictors_sparse))
+
+
+# Set parameters for sPLS
+eta <- 0.1  # Sparsity parameter (adjust as necessary)
+K <- 2  # Number of components
+
+
+# Iterate through each microbiome column
+for (yi in ylist) {
+  # Prepare the response variable
+  response <- as.numeric(data[[yi]])
+  # Fit the sparse PLS model
+  spls_model <- spls(predictors_sparse, response, K = K, eta = eta)
+  # Identify non-zero coefficients
+  selected_indices <- which(spls_model$betahat != 0)
+  # Subset data and projection based on selected indices
+  selected_loadings <- spls_model$projection
+  # Convert the selected_loadings to a dataframe
+  selected_loadings_df <- as.data.frame(selected_loadings)
+  rownames(selected_loadings_df) <- colnames(predictors_sparse)[selected_indices]
+  
+  # Extract Comp 1 coefficients
+  comp1_loadings <- selected_loadings_df[, "Comp 1"]
+  # Create a complete dataframe for the current microbiome
+  temp_df <- data.frame(Feature = colnames(predictors_sparse), Comp1 = rep(0, ncol(predictors_sparse)))
+  rownames(temp_df) <- colnames(predictors_sparse)
+  
+  # Fill in the non-zero coefficients
+  temp_df[rownames(selected_loadings_df), "Comp1"] <- comp1_loadings
+  # Rename the Comp1 column to the current microbiome
+  colnames(temp_df)[2] <- yi
+  
+  # Merge the results with the final_results dataframe
+  final_results <- merge(final_results, temp_df, by = "Feature")
+}
+
+
+# Ensure the dataframe has 19559 rows and 486 columns (1 Feature column + 485 microbiome columns)
+print(dim(final_results))
+# View the resulting dataframe
+head(final_results)
+
+write.csv(final_results, "C:\\Users\\yuqingw1\\Workfolder\\result\\Metobolomics\\final_results.csv", row.names = FALSE)
+
+
+```
+
+```{r}
+
+# Define a function to calculate summary statistics for each column
+calculate_summary <- function(column) {
+  min_val <- min(column, na.rm = TRUE)
+  max_val <- max(column, na.rm = TRUE)
+  mean_val <- mean(column, na.rm = TRUE)
+  quantiles <- quantile(column, probs = seq(0.1, 0.9, by = 0.1), na.rm = TRUE)
+  
+  c(min = min_val, max = max_val, mean = mean_val, quantiles)
+}
+
+# Apply the function to each column in the final_results dataframe (excluding the 'Feature' column)
+summary_stats <- apply(final_results[, -1], 2, calculate_summary)
+
+# Transpose the result for better readability
+summary_stats <- t(summary_stats)
+
+# Convert the result to a dataframe
+summary_stats_df <- as.data.frame(summary_stats)
+
+# Print the summary statistics dataframe
+print(summary_stats_df)
+
+
+```
+
+```{r}
+# Combine all the numeric values into a single vector
+combined_vector <- as.vector(as.matrix(final_results[, -1]))
+
+# Calculate the summary statistics for the combined vector
+min_val <- min(combined_vector, na.rm = TRUE)
+max_val <- max(combined_vector, na.rm = TRUE)
+mean_val <- mean(combined_vector, na.rm = TRUE)
+quantiles <- quantile(combined_vector, probs = seq(0.1, 0.9, by = 0.1), na.rm = TRUE)
+
+# Combine all the summary statistics into a single data frame
+summary_stats <- data.frame(
+  Min = min_val,
+  Max = max_val,
+  Mean = mean_val,
+  `10%` = quantiles[1],
+  `20%` = quantiles[2],
+  `30%` = quantiles[3],
+  `40%` = quantiles[4],
+  `50%` = quantiles[5],
+  `60%` = quantiles[6],
+  `70%` = quantiles[7],
+  `80%` = quantiles[8],
+  `90%` = quantiles[9]
+)
+
+# Print the summary statistics dataframe
+summary_stats_t <- t(summary_stats)
+summary_stats_t_df <- as.data.frame(summary_stats_t)
+colnames(summary_stats_t_df) <- "Value"
+print(summary_stats_t_df)
+
+```
+
+
+
+```{r}
+### Part 2 try one microbiome  
+### merge residual of microbiome and metabolite
+metabo <- merge(meta, result_df, by = "sampleID")
+
+# Define the list of microbiome columns (ylist)
+ylist <- paste0("UPDASV", sprintf("%03d", 1:485))
+# Define the list of metabolomics columns (xlist)
+xlist <- setdiff(names(metabo), c(ylist, "sampleID"))
+
+# Select the first microbiome column
+firt_y <- c('residuals_UPDASV001')
+predictors <- as.matrix(metabo[xlist])
+response <- as.numeric(metabo[[first_y]])
+
+
+pls_result <- pls(X = predictors, Y = response, ncomp = 2)
+# View the summary of the PLS model
+summary(pls_result)
+
+# Calculate VIP scores
+vip_scores <- vip(pls_result)
+# Convert VIP scores to a dataframe for easy handling
+vip_df <- as.data.frame(vip_scores)
+# Reorder columns so that Metabolite is the first column
+vip_df <- rownames_to_column(vip_df, var = "Metabolite")
+write.csv(vip_df, "C:\\Users\\yuqingw1\\Workfolder\\result\\Metobolomics\\vip_scores_filterID.csv", row.names = FALSE)
+
+
+
+
+
+
+
+```
+
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

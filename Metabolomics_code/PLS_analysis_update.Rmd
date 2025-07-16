@@ -1,0 +1,215 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+### This is holistic code ********* 
+library(mixOmics)
+library(tibble)
+library(fastDummies)
+
+# Load the data
+meta <- read.csv('C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\Metabolomics_filterID.csv')
+covariate <- read.csv('C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\microbiome_allvariable_806_original.csv')
+
+### Part 1: Use 4 covariates to perform linear regression and obtain residuals for microbiomes
+covariate_selected <- covariate[, c('sampleID', 'age', 'bmi', 'gender', 'smoking_status')]
+merged_data <- merge(meta, covariate_selected, by = "sampleID")
+
+# Data Processing
+cutPoints <- c(18.5, 25, 30)
+subset_data <- merged_data[!is.na(merged_data$bmi),]
+subset_data$bmi_binned2 <- cut(subset_data$bmi, breaks = c(-Inf, cutPoints, Inf), labels = FALSE)
+subset_data$bmi_binned2 <- as.character(subset_data$bmi_binned2)
+missing_data <- merged_data[is.na(merged_data$bmi),]
+missing_data$bmi_binned2 <- "missing"
+processdata <- rbind(subset_data, missing_data)
+new_labels <- c(
+  "inf_18.5",
+  "18.5_25.0",
+  "25.0_30.0",
+  "30.0_inf",
+  "missing"
+)
+processdata$bmi_binned2 <- factor(processdata$bmi_binned2, labels = new_labels)
+
+# Gender and smoking status processing
+processdata$gender <- ifelse(processdata$gender == "", "missing", processdata$gender)
+processdata$smoking_status <- ifelse(processdata$smoking_status == "", "missing", processdata$smoking_status)
+
+# Handling missing values in age
+processdata$age[is.na(processdata$age)] <- mean(processdata$age, na.rm = TRUE)
+
+# Generate dummy variables
+data <- dummy_cols(processdata, select_columns = c("gender", "bmi_binned2", "smoking_status"), remove_selected_columns = TRUE)
+
+# Define the list of microbiome columns (ylist)
+ylist <- paste0("UPDASV", sprintf("%03d", 1:485))
+
+# Initialize an empty dataframe to store VIP results
+vipresult <- data.frame()
+
+for (i in seq_along(ylist)) {
+  # Linear regression to obtain residuals
+  formula <- as.formula(paste(ylist[i], "~ age + gender_Male + bmi_binned2_30.0_inf + bmi_binned2_25.0_30.0 + bmi_binned2_inf_18.5 + smoking_status_Current + smoking_status_Former"))
+  lrmodel <- lm(formula, data = data)
+  
+  # Extract residuals and create a dataframe with them, using a dynamic column name
+  residuals <- residuals(lrmodel)
+  residual_colname <- paste0("Residual_", ylist[i])
+  result_df <- data.frame(sampleID = data$sampleID)
+  result_df[[residual_colname]] <- residuals
+  
+  ### Part 2: Merge residuals with metabolite data and perform PLS
+  metabo <- merge(meta, result_df, by = "sampleID")
+  
+  # Define the list of metabolomics columns (xlist)
+  xlist <- setdiff(names(metabo), c(residual_colname, ylist, "sampleID"))
+  
+  # PLS analysis
+  predictors <- as.matrix(metabo[xlist])
+  response <- as.numeric(metabo[[residual_colname]])
+  
+  pls_result <- pls(X = predictors, Y = response, ncomp = 2)
+  
+  # Calculate VIP scores and extract only the `Comp 1` values
+  vip_scores <- vip(pls_result)
+  vip_df <- as.data.frame(vip_scores)
+  vip_df <- rownames_to_column(vip_df, var = "Metabolite")
+  
+  # Extract only Comp 1 and add microbiome identifier
+  vip_comp1 <- vip_df[, c("Metabolite", "comp1")]
+  colnames(vip_comp1)[2] <- paste0("Comp1_", ylist[i])  # Rename `Comp 1` column for identification
+  
+  # Merge the results into vipresult
+  if (nrow(vipresult) == 0) {
+    vipresult <- vip_comp1  # Initialize vipresult with the first vip_comp1
+  } else {
+    vipresult <- merge(vipresult, vip_comp1, by = "Metabolite", all = TRUE)
+  }
+  
+}
+
+
+# View the first few rows of the combined VIP result
+head(vipresult)
+
+write.csv(vipresult, "C:\\Users\\yuqingw1\\Workfolder\\result\\Metobolomics\\vip_scores_filterID.csv", row.names = FALSE)
+
+```
+
+
+
+
+
+```{r}
+### This is holistic code
+library(mixOmics)
+library(tibble)
+library(fastDummies)
+
+# Load the data
+meta <- read.csv('C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\Metabolomics_filterID.csv')
+covariate <- read.csv('C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\microbiome_allvariable_806_original.csv')
+
+### Part 1: Data Merge and Preprocessing
+covariate_selected <- covariate[, c('sampleID', 'age', 'bmi', 'gender', 'smoking_status')]
+merged_data <- merge(meta, covariate_selected, by = "sampleID")
+
+# Data Processing
+cutPoints <- c(18.5, 25, 30)
+subset_data <- merged_data[!is.na(merged_data$bmi),]
+subset_data$bmi_binned2 <- cut(subset_data$bmi, breaks = c(-Inf, cutPoints, Inf), labels = FALSE)
+subset_data$bmi_binned2 <- as.character(subset_data$bmi_binned2)
+missing_data <- merged_data[is.na(merged_data$bmi),]
+missing_data$bmi_binned2 <- "missing"
+processdata <- rbind(subset_data, missing_data)
+new_labels <- c(
+  "inf_18.5",
+  "18.5_25.0",
+  "25.0_30.0",
+  "30.0_inf",
+  "missing"
+)
+processdata$bmi_binned2 <- factor(processdata$bmi_binned2, labels = new_labels)
+
+# Gender and smoking status processing
+processdata$gender <- ifelse(processdata$gender == "", "missing", processdata$gender)
+processdata$smoking_status <- ifelse(processdata$smoking_status == "", "missing", processdata$smoking_status)
+
+# Handling missing values in age
+processdata$age[is.na(processdata$age)] <- mean(processdata$age, na.rm = TRUE)
+
+# Generate dummy variables
+data <- dummy_cols(processdata, select_columns = c("gender", "bmi_binned2", "smoking_status"), remove_selected_columns = TRUE)
+
+
+
+### Part 2: Linear Regression for Each Metabolomics and Microbiome Pair
+# Define the list of microbiome columns (ylist)
+ylist <- paste0("UPDASV", sprintf("%03d", 1:485))
+metabolomics_cols <- setdiff(names(meta), c(ylist, "sampleID"))
+count <- 1 
+
+# Initialize an empty dataframe to store residual
+residuals_matrix <- matrix(NA, nrow = nrow(data), ncol= length(ylist) * length(metabolomics_cols))
+
+### for loop for each microbiome and each metabolomics
+for (i in seq_along(ylist)) {
+  for (j in seq_along(metabolomics_cols)) {
+  # Linear regression to obtain residuals
+  formula <- as.formula(paste(ylist[i], "~ age + gender_Male + bmi_binned2_30.0_inf + bmi_binned2_25.0_30.0 + bmi_binned2_inf_18.5 + smoking_status_Current + smoking_status_Former +", metabolomics_cols[j]))
+  lrmodel <- lm(formula, data = data)
+  
+  # Extract residuals and create a dataframe with them, using a dynamic column name
+  residuals_matrix[, count] <- sum(residuals(lrmodel))
+  count <- count +1
+  }
+}
+
+
+### Part 3 Partial Least Squares(PLS) regression and VIP calculation
+residuals_df <- as.data.frame(residuals_matrix)
+  
+for (i in seq_along(ylist)) {
+  # PLS analysis
+  y_residual <- residuals_matrix[, ((i-1) * length(metabolomics_cols) +1) (i*length(metabolomics_cols))]
+  
+  # Prepare predictors (metabolomics residuals) and response (current microbiome feature)
+  predictors <- residuals_df[, ((i - 1) * length(metabolomics_cols) + 1):(i * length(metabolomics_cols))]
+  response <- data[, ylist[i]]  # Dependent variable
+  
+  # Fit PLS regression with 2 components
+  pls_result <- pls(X = as.matrix(predictors), Y = response, ncomp = 2)
+  
+  # Calculate VIP scores
+  vip_scores <- VIP(pls_result)
+  vip_df <- as.data.frame(vip_scores)
+  vip_df <- rownames_to_column(vip_df, var = "Metabolite")
+
+  # Extract only Comp 1 and rename column
+  vip_comp1 <- vip_df[, c("Metabolite", "comp1")]
+  colnames(vip_comp1)[2] <- paste0("Comp1_", ylist[i])  # Rename `Comp 1` column for identification
+  
+  # Append to results dataframe
+  vipresult <- rbind(vipresult, vip_comp1)
+}
+}
+
+  
+write.csv(vipresult, "C:\\Users\\yuqingw1\\Workfolder\\result\\Metobolomics\\vip_scores_filterID.csv", row.names = FALSE)
+
+```
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

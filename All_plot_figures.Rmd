@@ -1,0 +1,686 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r} 
+### MIXTURE PLOT
+
+
+library(ggplot2)
+library(reshape2)
+
+load("/Users/chelseawu/UChicago/Part-time/BSD/result/202506new/microbiome_filtermissingover50/Mixture_Model/Insulin_results2i_l90.RData")
+#load("/Users/chelseawu/UChicago/Part-time/BSD/result/202506new/microbiome_filtermissingover50/Mixture_Model/Resistin_results2i.RData")
+#load("/Users/chelseawu/UChicago/Part-time/BSD/result/202506new/microbiome_filtermissingover50/Mixture_Model/Ghrelin_results2i.RData")
+
+
+# Function to identify selected microbiomes using wmatpos and wmatneg
+selected_microbiomes <- function(model, threshold) {
+  # Melt the weight matrices
+  melted_wmatpos <- melt(model$wmat$wmatpos, varnames = c("rh", "mix_name"))
+  melted_wmatneg <- melt(model$wmat$wmatneg, varnames = c("rh", "mix_name"))
+  
+  # Identify significant microbiomes
+  positive_microbiomes <- melted_wmatpos[melted_wmatpos$value > threshold, "mix_name"]
+  negative_microbiomes <- melted_wmatneg[melted_wmatneg$value > threshold, "mix_name"]
+  
+  # Combine and return unique microbiomes
+  unique(c(positive_microbiomes, negative_microbiomes))
+}
+
+# Define thresholds for all models
+#threshold_resistin <- 1 / length(Resistin_results2i$mix_name)
+threshold_insulin <- 1 / length(Insulin_results2i$mix_name)
+#threshold_ghrelin <- 1 / length(Ghrelin_results2i$mix_name)
+
+#print(paste("Threshold Resistin:", threshold_resistin))
+print(paste("Threshold Insulin:", threshold_insulin))
+#print(paste("Threshold Ghrelin:", threshold_ghrelin))
+
+# Calculate the mean threshold
+#mean_threshold <- mean(c(threshold_resistin, threshold_insulin))
+mean_threshold <- mean(c(threshold_insulin))
+print(paste("Mean Threshold:", mean_threshold))
+
+# Identify selected microbiomes for Resistin and Insulin
+#selected_resistin <- selected_microbiomes(Resistin_results2i, threshold_resistin)
+selected_insulin <- selected_microbiomes(Insulin_results2i, threshold_insulin)
+
+# Combine significant microbiomes from Resistin and Insulin
+#selected_microbiomes_list <- unique(c(selected_resistin, selected_insulin))
+selected_microbiomes_list <- unique(c(selected_insulin))
+print("Selected Microbiomes (combined from Resistin and Insulin):")
+print(selected_microbiomes_list)
+
+
+# Melt the weight matrices for Resistin, Insulin, and Ghrelin
+#melted_wmatpos_resistin <- melt(Resistin_results2i$wmat$wmatpos, varnames = c("rh", "mix_name"))
+#melted_wmatpos_resistin$Biomarker <- "Resistin"
+#melted_wmatpos_resistin$Direction <- "Positive"
+
+#melted_wmatneg_resistin <- melt(Resistin_results2i$wmat$wmatneg, varnames = c("rh", "mix_name"))
+#melted_wmatneg_resistin$Biomarker <- "Resistin"
+#melted_wmatneg_resistin$Direction <- "Negative"
+
+melted_wmatpos_insulin <- melt(Insulin_results2i$wmat$wmatpos, varnames = c("rh", "mix_name"))
+melted_wmatpos_insulin$Biomarker <- "Insulin"
+melted_wmatpos_insulin$Direction <- "Positive"
+
+melted_wmatneg_insulin <- melt(Insulin_results2i$wmat$wmatneg, varnames = c("rh", "mix_name"))
+melted_wmatneg_insulin$Biomarker <- "Insulin"
+melted_wmatneg_insulin$Direction <- "Negative"
+
+#melted_wmatpos_ghrelin <- melt(Ghrelin_results2i$wmat$wmatpos, varnames = c("rh", "mix_name"))
+#melted_wmatpos_ghrelin$Biomarker <- "Ghrelin"
+#melted_wmatpos_ghrelin$Direction <- "Positive"
+
+#melted_wmatneg_ghrelin <- melt(Ghrelin_results2i$wmat$wmatneg, varnames = c("rh", "mix_name"))
+#melted_wmatneg_ghrelin$Biomarker <- "Ghrelin"
+#melted_wmatneg_ghrelin$Direction <- "Negative"
+
+
+
+# Function to add missing microbiomes with a value of 0
+fill_missing_microbiomes <- function(melted_data, selected_microbiomes_list) {
+  # Find microbiomes that are in selected_microbiomes_list but not in melted_data
+  missing_microbiomes <- setdiff(selected_microbiomes_list, melted_data$mix_name)
+  
+  # Create rows with 0 value for missing microbiomes
+  if (length(missing_microbiomes) > 0) {
+    new_rows <- data.frame(
+      rh = NA,  # Set 'rh' to NA or any value you prefer for missing microbiomes
+      mix_name = missing_microbiomes,
+      value = 0,
+      Biomarker = unique(melted_data$Biomarker),
+      Direction = unique(melted_data$Direction)
+    )
+    # Add the new rows to the melted data
+    melted_data <- rbind(melted_data, new_rows)
+  }
+  
+  return(melted_data)
+}
+
+# Apply the function to each melted table
+#melted_wmatpos_resistin <- fill_missing_microbiomes(melted_wmatpos_resistin, selected_microbiomes_list)
+#melted_wmatneg_resistin <- fill_missing_microbiomes(melted_wmatneg_resistin, selected_microbiomes_list)
+melted_wmatpos_insulin <- fill_missing_microbiomes(melted_wmatpos_insulin, selected_microbiomes_list)
+melted_wmatneg_insulin <- fill_missing_microbiomes(melted_wmatneg_insulin, selected_microbiomes_list)
+#melted_wmatpos_ghrelin <- fill_missing_microbiomes(melted_wmatpos_ghrelin, selected_microbiomes_list)
+#melted_wmatneg_ghrelin <- fill_missing_microbiomes(melted_wmatneg_ghrelin, selected_microbiomes_list)
+
+
+
+# Combine the melted data
+#melted_data <- rbind(melted_wmatpos_resistin, melted_wmatneg_resistin, melted_wmatpos_insulin, melted_wmatneg_insulin, melted_wmatpos_ghrelin, melted_wmatneg_ghrelin)
+melted_data <- rbind(melted_wmatpos_insulin, melted_wmatneg_insulin)
+
+# Filter the melted data to include only the selected microbiomes
+melted_data <- melted_data[melted_data$mix_name %in% selected_microbiomes_list, ]
+if (nrow(melted_data) == 0) {
+  stop("No matching microbiomes found in the data after filtering.")
+}
+
+
+# Create the combined box plot with a red dashed horizontal line at the mean threshold
+#melted_data$Biomarker <- factor(melted_data$Biomarker, levels = c("Ghrelin", "Resistin", "Insulin"))
+melted_data$Biomarker <- factor(melted_data$Biomarker, levels = c("Insulin"))
+facet_labels <- c("Negative" = "Negative Effect", "Positive" = "Positive Effect")
+
+
+mean_plot <- ggplot(melted_data, aes(x = mix_name, y = value, color = Biomarker)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3, position = position_dodge(width = 0.75)) +  # Show mean as point
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, family='Times'),
+        plot.title = element_blank(),  # Remove title
+        axis.title.x = element_blank() # Remove x-axis label
+        ) +
+  geom_jitter(alpha = 0.3, aes(color = Biomarker), position = position_dodge(width = 0.75)) +
+  labs(title = "A)", y = "Mixture Effect") +
+  theme(
+    plot.title = element_text(family = "Times", size = 12, face = "plain", hjust = 0,
+                              margin = margin(t = 4, b = 4) ),
+    axis.title.y = element_text(family = "Times", size = 12))+
+  #scale_color_manual(values = c("Ghrelin" = "orange4", "Resistin" = "blue4", "Insulin" = "green4")) +
+  scale_color_manual(values = c("Insulin" = "orange4")) +
+  facet_wrap(~Direction, ncol = 1, scales = "free_y", labeller = labeller(Direction = facet_labels)) # Update facet labels
+
+
+print(mean_plot)
+### save as 840 * 840
+
+```
+```{r}
+plot_data <- ggplot_build(mean_plot)$data[[1]]
+mix_name_list <- c("Actinomyces", "Anaerovorax", "Atopobium", 
+                   "Bacteria (unknown genus)", "Bacteroidales (unknown genus)", 
+                   "Bacteroidetes (unknown genus)", "Campylobacter", "Centipeda", 
+                   "Corynebacterium", "Dialister", 
+                   "Firmicutes (unknown genus)", "Lachnospiraceae (unknown genus)", 
+                   "Lactobacillus", "Megasphaera", "Mycoplasma", "Parvimonas", 
+                   "Peptostreptococcaceae (unknown genus)", "Prevotellaceae (unknown genus)", 
+                   "Rothia", "Selenomonas", "Tagaea", "Veillonella")
+
+# Repeat mix_name list twice (Negative and Positive) * 3 biomarkers
+expanded_mix_names <- rep(mix_name_list, each = 3, times = 2)
+
+# Step 2: Verify lengths
+stopifnot(length(expanded_mix_names) == nrow(plot_data))  # Ensure it matches 138 rows
+
+# Step 3: Add mix_name to plot_data
+plot_data$mix_name <- expanded_mix_names
+plot_data$Biomarker <- recode(plot_data$colour,
+                              "orange4" = "Ghrelin",
+                              "blue4" = "Resistin",
+                              "green4" = "Insulin")
+plot_data$Effect <- ifelse(plot_data$PANEL == 1, "Negative Effect", "Positive Effect")
+
+plot_data_summary <- plot_data %>%
+  group_by(mix_name, Biomarker, Effect) %>%
+  summarise(
+    ymean = mean(y, na.rm = TRUE),       # Mean of y-values
+    #ystd  = sd(y, na.rm = TRUE),         # Standard deviation
+    #ymin  = ymean - ystd,                # ymin = mean - std dev
+    #ymax  = ymean + ystd,                # ymax = mean + std dev
+    .groups = "drop"
+  )
+
+plot_data <- plot_data %>%
+  left_join(plot_data_summary, by = c("mix_name", "Biomarker", "Effect"))
+
+
+write.csv(plot_data, "C:\\Users\\yuqingw1\\Workfolder\\result\\Mixture_Plot_result.csv", row.names = FALSE)
+
+```
+
+
+```{r}
+
+##### Mixture Plot Part 2
+# Convert to trfs format
+# Read the saved PNG image
+image_path <- "C:\\Users\\yuqingw1\\Workfolder\\Figure\\Mixture_plot.png"
+image_data <- readBin(image_path, what = "raw", n = file.info(image_path)$size)
+
+# Define TRFS metadata
+metadata <- list(
+  Format = "PNG",
+  Resolution = "1260x1260",
+  Description = "Mixture Analysis using WQS for different biomarker and microbiome"
+)
+
+# Define the TRFS output path
+trfs_path <- "C:\\Users\\yuqingw1\\Workfolder\\Figure\\Mixture_plot.trfs"
+
+# Write the TRFS file
+con <- file(trfs_path, "wb")
+writeLines("[HEADER]", con)
+
+# Add metadata to the TRFS file
+for (key in names(metadata)) {
+  writeLines(paste0(key, ": ", metadata[[key]]), con)
+}
+
+writeLines("[DATA]", con)
+
+# Write binary image data
+writeBin(image_data, con)
+
+writeLines("[END]", con)
+close(con)
+
+cat("TRFS file saved as '", trfs_path, "'\n", sep = "")
+
+
+
+
+# Add table then convert trfs format
+
+library(magick)
+
+# Load the two PNG plots
+plot1 <- image_read("C:\\Users\\yuqingw1\\Workfolder\\Figure\\Mixture_plot.png")
+plot2 <- image_read("C:\\Users\\yuqingw1\\Workfolder\\Figure\\MixtureTable.png")
+
+# Zoom in by cropping the image
+#plot2_zoomed <- image_scale(plot2, "200%")  # Scale the image to 120% of its original size
+plot2_centered <- image_extent(plot2, geometry = "1200x200", gravity = "center", color = "white")
+
+
+# Combine the plots vertically
+combined_plot <- image_append(c(plot1, plot2), stack = TRUE)
+
+# Save the combined plot as a PNG
+output_path <- "C:\\Users\\yuqingw1\\Workfolder\\Figure\\Mixture_combined_Table.png"
+image_write(combined_plot, output_path)
+cat("Combined plot saved as:", output_path, "\n")
+
+
+# Read the combined PNG image
+combined_image_data <- readBin(output_path, what = "raw", n = file.info(output_path)$size)
+
+# Define TRFS metadata
+metadata <- list(
+  Description = "Integrated figure combining two plots (upper and lower).",
+  Format = "PNG",
+  Resolution = "1500x2000"  # Update this based on the actual dimensions of your combined plot
+)
+
+# Define TRFS file path
+trfs_path <- "C:\\Users\\yuqingw1\\Workfolder\\Figure\\Mixture_combined_Table.trfs"
+
+# Write the TRFS file
+con <- file(trfs_path, "wb")
+writeLines("[HEADER]", con)
+
+# Add metadata
+for (key in names(metadata)) {
+  writeLines(paste0(key, ": ", metadata[[key]]), con)
+}
+
+writeLines("[DATA]", con)
+
+# Write binary image data
+writeBin(combined_image_data, con)
+
+writeLines("[END]", con)
+close(con)
+
+cat("TRFS file saved as:", trfs_path, "\n")
+
+
+
+
+```
+
+
+
+
+```{r}
+#### Chord plot
+
+library(circlize)
+library(dplyr)
+library(readxl)
+library(stringr)
+library(ggplot2)
+library(reshape2)
+
+# Load your data
+data <- read.csv("/Users/chelseawu/UChicago/Part-time/BSD/Datasets/micro485_biomarker_plotdata_2025.csv")
+taxonIDname <- read_excel("/Users/chelseawu/UChicago/Part-time/BSD/Datasets/taxonIDmappingdict.xlsx")
+
+### significance with the microbiome coefficient's plot (plot in python)
+#selected_microbiomes <- c('UPDASV260', 'UPDASV092', 'UPDASV087', 'UPDASV105', 'UPDASV346', 'UPDASV468', 'UPDASV337', 'UPDASV281', 'UPDASV339', 'UPDASV389', 
+ #'UPDASV001',  'UPDASV375', 'UPDASV384',  'UPDASV037',  'UPDASV218',  'UPDASV073',     'UPDASV286', 'UPDASV278', 'UPDASV311', 'UPDASV212', 'UPDASV134', 'UPDASV195', 'UPDASV256', 'UPDASV444', 'UPDASV089', 'UPDASV064', 'UPDASV270', 'UPDASV153', 'UPDASV422', 'UPDASV173', 'UPDASV224', 'UPDASV126', 'UPDASV435')
+
+selected_microbiomes <- c('UPDASV073',
+ 'UPDASV190',
+ 'UPDASV270',
+ 'UPDASV430',
+ 'UPDASV345',
+ 'UPDASV394',
+ 'UPDASV429',
+ 'UPDASV224',
+ 'UPDASV187',
+ 'UPDASV139')
+
+filtered_data <- data %>%
+  filter(Index %in% selected_microbiomes) %>%
+  #dplyr::select(Index, PM25_coef, Ghrelin_coef, Resistin_coef, Insulin_coef) %>%
+  dplyr::select(Index, PM25_coef, Insulin_coef) %>%
+  rename(PM2.5 = PM25_coef,
+         #Ghrelin = Ghrelin_coef,
+         #Resistin = Resistin_coef,
+         Insulin = Insulin_coef)
+
+filtered_data <- taxonIDname %>%
+  inner_join(filtered_data, by = c("newtaxonID" = "Index"))
+
+
+# Define the custom function
+extract_name <- function(row) {
+  attlist <- str_split(row, ",")[[1]]
+
+  if (attlist[length(attlist)] == 'nan') {
+    if (attlist[length(attlist) - 1] != 'nan') {
+      name <- paste(attlist[length(attlist) - 1], '(unknown genus)')
+    } else if (attlist[length(attlist) - 2] != 'nan') {
+      name <- paste(attlist[length(attlist) - 2], '(unknown genus)')
+    } else if (attlist[length(attlist) - 3] != 'nan') {
+      name <- paste(attlist[length(attlist) - 3], '(unknown genus)')
+    } else if (attlist[length(attlist) - 4] != 'nan') {
+      name <- paste(attlist[length(attlist) - 4], '(unknown genus)')
+    } else {
+      name <- paste(attlist[length(attlist) - 5], '(unknown genus)')
+    }
+  } else {
+    name <- attlist[length(attlist)]
+  }
+
+  return(name)
+}
+
+# Assuming 'name' is the data frame and 'attribute' is the column
+filtered_data <- filtered_data %>%
+  mutate(newname = sapply(attribute, extract_name))
+
+filtered_data$newname <- gsub("_", " ", filtered_data$newname)
+
+filtered_data <- filtered_data %>%
+  #select(PM2.5, Ghrelin, Resistin, Insulin, newname)
+  select(PM2.5, Insulin, newname)
+
+
+
+# Melt the data into long format
+library(tidyr)
+chord_data <- filtered_data %>%
+  gather(key = "Metric", value = "Coefficient", -newname)
+
+
+# Rename columns for circlize
+colnames(chord_data) <- c("source", "target", "value")
+chord_data <- chord_data[order(chord_data$source, decreasing = TRUE), ]
+print(chord_data)
+
+# Assign colors to the edges based on the source and target values
+#target_colors <- c("PM2.5" = "hotpink1", "Ghrelin" = "cyan1", "Resistin" = "deepskyblue2", "Insulin" = "steelblue3")
+target_colors <- c("PM2.5" = "hotpink1", "Insulin" = "steelblue3")
+
+# Assign colors to the sources
+chord_data$color <- ifelse(chord_data$target == "PM2.5", target_colors["PM2.5"],
+                           #ifelse(chord_data$target == "Ghrelin", target_colors["Ghrelin"],
+                                  #ifelse(chord_data$target == "Resistin", target_colors["Resistin"],
+                        ifelse(chord_data$target == "Insulin", target_colors["Insulin"], "red"))
+
+
+# Initialize the chord diagram
+circos.clear()
+circos.par(
+  canvas.xlim = c(-1.0, 1.0),  # Adjust the horizontal limit (Zoom out by making limits larger)
+  canvas.ylim = c(-2.0, 1.0),  # Adjust the vertical limit to move the diagram up
+  gap.after = c(rep(2, length(unique(chord_data$source)) - 1), 10, 
+                rep(2, length(unique(chord_data$target)) - 1), 10)
+  
+  )
+
+# Define the sector colors
+sectors <- unique(c(chord_data$source, chord_data$target))
+sector_colors <- c(rep("burlywood1", length(unique(chord_data$source))), target_colors)
+names(sector_colors) <- sectors
+
+
+# Plot the chord diagram
+chord_plot <- function() {
+  # Adjust graphical parameters
+  par(family = "Times", cex.main = 1.0, cex.axis = 0.5, cex.lab = 0.5)  # Adjust title size, axis text size, and label text size
+
+  # Plot the chord diagram
+  chordDiagram(chord_data, annotationTrack = "grid", preAllocateTracks = 1,
+               grid.col = sector_colors, col = chord_data$color,
+               link.largest.ontop = TRUE, transparency = 0.3)
+
+  # Add titles and labels
+  circos.track(track.index = 1, panel.fun = function(x, y) {
+    circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index, 
+                facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.5), cex = 2.5,  family = "Times")  #  "cex" parameter is to Adjust text size
+  }, bg.border = NA)
+
+  # Add title with adjusted size
+  title(main = "A)", cex.main = 2.0, adj=0,  family = "Times")
+
+  # Reset graphical parameters to default
+  #par(cex.main = 1, cex.axis = 1, cex.lab = 0.8)
+}
+
+chord_plot()
+
+#### save plot as 2200 * 2000
+
+```
+
+
+```{r}
+### convert chord plot to trfs 
+# Add table then convert trfs format
+
+library(magick)
+
+# Load the two PNG plots
+plot1 <- image_read("/Users/chelseawu/UChicago/Part-time/BSD/result/202506new/microbiome_filtermissingover50/Chord_plot.png")
+plot2 <- image_read("/Users/chelseawu/UChicago/Part-time/BSD/result/202506new/microbiome_filtermissingover50/Mediation.png")
+
+# Zoom in by cropping the image
+plot2_zoomed <- image_scale(plot2, "170%")  # Scale the image to 120% of its original size
+plot2_centered <- image_extent(plot2_zoomed, geometry = "2700x500", gravity = "center", color = "white")
+
+
+# Combine the plots vertically
+combined_plot <- image_append(c(plot1, plot2_centered), stack = TRUE)
+
+# Save the combined plot as a PNG
+output_path <- "/Users/chelseawu/UChicago/Part-time/BSD/result/202506new/microbiome_filtermissingover50/Chord_combined_Tabel.png"
+image_write(combined_plot, output_path)
+cat("Combined plot saved as:", output_path, "\n")
+
+
+# Read the combined PNG image
+combined_image_data <- readBin(output_path, what = "raw", n = file.info(output_path)$size)
+
+# Define TRFS metadata
+metadata <- list(
+  Description = "Integrated figure combining two plots (upper and lower).",
+  Format = "PNG",
+  Resolution = "1500x2000"  # Update this based on the actual dimensions of your combined plot
+)
+
+# Define TRFS file path
+trfs_path <- "/Users/chelseawu/UChicago/Part-time/BSD/result/202506new/microbiome_filtermissingover50/Chord_combined_Tabel.trfs"
+
+# Write the TRFS file
+con <- file(trfs_path, "wb")
+writeLines("[HEADER]", con)
+
+# Add metadata
+for (key in names(metadata)) {
+  writeLines(paste0(key, ": ", metadata[[key]]), con)
+}
+
+writeLines("[DATA]", con)
+
+# Write binary image data
+writeBin(combined_image_data, con)
+
+writeLines("[END]", con)
+close(con)
+
+cat("TRFS file saved as:", trfs_path, "\n")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+### microbiome orginal value rate
+
+
+
+# Load necessary libraries
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+
+#### rate_df is orignated from Python processing
+
+# Read data
+rate_df <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\result\\microbiome_valuerate_df.csv")
+rate_df <- rate_df %>% select(-X)
+correct_names <- c(
+  "Actinobacteria", "Bacteroidetes", "Erysipelotrichaceae",
+  "Lachnospiraceae", "Other Bacteria", "Parvimonas",
+  "Pectinatus", "Proteobacteria", "Tissierella", "sampleID"
+)
+names(rate_df) <- correct_names
+
+
+plotbardata <- rate_df %>%
+  pivot_longer(-sampleID, names_to = "category", values_to = "value")
+
+# Plot
+colors <- c(
+  "Lachnospiraceae" = "#66c2a5",
+  "Oschillospiraceae" = "#fc8d62",
+  "Other Clostridia" = "#8da0cb",
+  "Bacteroidetes" = "#e78ac3",
+  "Actinobacteria" = "#a6d854",
+  "Proteobacteria" = "#1b9e77",
+  "Erysipelotrichaceae" = "#e5c494",
+  "Parvimonas" = "#ffd92f",
+  "Tissierella" = "#66a61e",
+  "Pectinatus" = "#d95f02",
+  "Other Bacteria" = "indianred"
+)
+
+selected_categories <- c(
+  "Bacteroidetes",
+  "Other Bacteria"
+)
+plotbardata <- plotbardata %>%
+  group_by(sampleID) %>%
+  arrange(sampleID, desc(value)) %>%
+  mutate(label = ifelse(category %in% selected_categories, category, NA))
+
+# Plot
+barplot <- ggplot(data = plotbardata, aes(x = factor(sampleID), y = value, fill = category)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = colors) +
+  #geom_text(aes(label = label), size = 2.5, angle = 90, hjust = 0.5, vjust = 0.5, check_overlap = TRUE) +
+  theme_minimal() +
+  labs(title = "Microbiome Composition per Individual", x = NULL, y = NULL) +
+  theme(
+    legend.position = "bottom",  # Adjust position to show the legend at the bottom
+    legend.title = element_text(size = 14),  # Adjust legend title size
+    legend.text = element_text(size = 12),  # Adjust legend text size
+    legend.direction = "horizontal",  # Set the legend direction to horizontal
+    legend.box = "horizontal",  # Set the legend box to horizontal
+    axis.text.x = element_blank(), 
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_text(size = 18),  # Adjust y-axis text size
+    plot.title = element_text(size = 30, hjust = 0.5)  # Adjust title size
+  ) +
+  guides(fill = guide_legend(title = "Category", nrow = 2, byrow = TRUE))  # Arrange the legend in rows
+
+
+print(barplot)
+
+
+```
+
+
+
+
+
+```{r}
+
+#### brick plot, final brick plot has done in Python
+
+# Load necessary libraries
+library(tidyverse)
+library(readxl)
+library(reshape2)
+library(ggplot2)
+library(scales)
+
+# Read data
+data <- read.csv("/Users/chelseawu/UChicago/Part-time/BSD/Datasets/micro485_biomarker_plotdata_2025.csv")
+taxonIDname <- read_excel("/Users/chelseawu/UChicago/Part-time/BSD/Datasets/taxonIDmappingdict.xlsx")
+
+loc7 <- (data$Resistin_adjp <= 0.05) | (data$Insulin_adjp <= 0.05)
+vardf <- data[loc7, "Index", drop = FALSE]
+
+# Merge data with vardf
+data <- merge(vardf, data, by = 'Index')
+
+
+# Normalize coefficients using Min-Max scaling
+#coefdata <- data %>% select(Index, PM25_coef, Ghrelin_coef, Resistin_coef, Insulin_coef)
+coefdata <- data %>% select(Index, PM25_coef, Insulin_coef)
+coefdata[names(coefdata)[-1]] <- apply(coefdata[names(coefdata)[-1]], 2, function(x) rescale(x, to = c(-1, 1)))
+#names(coefdata) <- c('Index', 'PM25', 'Ghrelin', 'Resistin', 'Insulin')
+names(coefdata) <- c('Index', 'PM25','Insulin')
+
+
+add_significance_marker <- function(coef, adjp) {
+  if (!is.na(adjp) && adjp <= 0.05) {
+    if (coef > 0) {
+      return('+')
+    } else if (coef < 0) {
+      return('-')
+    }
+  }
+  return('')
+}
+
+# Apply the function to each row and each metric using mutate and rowwise
+significance <- data %>%
+  rowwise() %>%
+  mutate(
+    Ghrelin_marker = add_significance_marker(Ghrelin_coef, Ghrelin_adjp),
+    Insulin_marker = add_significance_marker(Insulin_coef, Insulin_adjp),
+    Resistin_marker = add_significance_marker(Resistin_coef, Resistin_adjp),
+    PM25_marker = add_significance_marker(PM25_coef, PM25_adjp)
+  ) %>%
+  select(Index, Ghrelin_marker, Insulin_marker, Resistin_marker, PM25_marker) %>%
+  ungroup()
+
+# Print the significance data frame to check results
+print(significance)
+
+#significance <- significance %>% arrange(Index)
+
+# Reshape data for plotting
+long_data <- melt(coefdata, id.vars = "Index", variable.name = "Metric", value.name = "Coefficient")
+#pivot_data <- dcast(long_data, Index ~ Metric, value.var = "Coefficient")
+
+significance_long <- significance %>%
+  pivot_longer(cols = -Index, names_to = "Metric", values_to = "Significance") %>%
+  mutate(Metric = sub("_marker", "", Metric))
+long_data <- long_data %>%
+  left_join(significance_long, by = c("Index", "Metric"))
+
+
+# Plot the heatmap
+ggplot(long_data, aes(x = Metric, y = Index, fill = Coefficient)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, limit = c(min(long_data$Coefficient), max(long_data$Coefficient)), space = "Lab", name = "Coefficient") +
+  geom_text(aes(label = Significance), color = "black", size = 3) +
+  theme_minimal() +
+  labs(title = "Heatmap of Coefficients by Metric and Index", x = NULL, y = NULL) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+
+```
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

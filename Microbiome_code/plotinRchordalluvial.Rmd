@@ -1,0 +1,736 @@
+
+```{r}
+# Load necessary libraries
+library(tidyverse)
+library(readxl)
+library(reshape2)
+library(ggplot2)
+library(scales)
+
+# Read data
+data <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\result\\plotdata.csv")
+taxonIDname <- read_excel("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\processing_4_microbiome_new\\taxonIDmappingdict.xlsx")
+
+loc7 <- (data$Resistin_adjp <= 0.05) | (data$Insulin_adjp <= 0.05)
+vardf <- data[loc7, "Index", drop = FALSE]
+
+# Merge data with vardf
+data <- merge(vardf, data, by = 'Index')
+
+
+# Normalize coefficients using Min-Max scaling
+coefdata <- data %>% select(Index, PM25_coef, Ghrelin_coef, Resistin_coef, Insulin_coef)
+coefdata[names(coefdata)[-1]] <- apply(coefdata[names(coefdata)[-1]], 2, function(x) rescale(x, to = c(-1, 1)))
+names(coefdata) <- c('Index', 'PM25', 'Ghrelin', 'Resistin', 'Insulin')
+
+
+add_significance_marker <- function(coef, adjp) {
+  if (!is.na(adjp) && adjp <= 0.05) {
+    if (coef > 0) {
+      return('+')
+    } else if (coef < 0) {
+      return('-')
+    }
+  }
+  return('')
+}
+
+# Apply the function to each row and each metric using mutate and rowwise
+significance <- data %>%
+  rowwise() %>%
+  mutate(
+    Ghrelin_marker = add_significance_marker(Ghrelin_coef, Ghrelin_adjp),
+    Insulin_marker = add_significance_marker(Insulin_coef, Insulin_adjp),
+    Resistin_marker = add_significance_marker(Resistin_coef, Resistin_adjp),
+    PM25_marker = add_significance_marker(PM25_coef, PM25_adjp)
+  ) %>%
+  select(Index, Ghrelin_marker, Insulin_marker, Resistin_marker, PM25_marker) %>%
+  ungroup()
+
+# Print the significance data frame to check results
+print(significance)
+
+#significance <- significance %>% arrange(Index)
+
+# Reshape data for plotting
+long_data <- melt(coefdata, id.vars = "Index", variable.name = "Metric", value.name = "Coefficient")
+#pivot_data <- dcast(long_data, Index ~ Metric, value.var = "Coefficient")
+
+significance_long <- significance %>%
+  pivot_longer(cols = -Index, names_to = "Metric", values_to = "Significance") %>%
+  mutate(Metric = sub("_marker", "", Metric))
+long_data <- long_data %>%
+  left_join(significance_long, by = c("Index", "Metric"))
+
+
+# Plot the heatmap
+ggplot(long_data, aes(x = Metric, y = Index, fill = Coefficient)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, limit = c(min(long_data$Coefficient), max(long_data$Coefficient)), space = "Lab", name = "Coefficient") +
+  geom_text(aes(label = Significance), color = "black", size = 3) +
+  theme_minimal() +
+  labs(title = "Heatmap of Coefficients by Metric and Index", x = NULL, y = NULL) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+
+```
+
+
+
+
+
+```{r}
+
+##### plot chord figure part 1
+library(circlize)
+library(dplyr)
+library(readxl)
+library(tidyverse)
+library(reshape2)
+library(ggplot2)
+library(scales)
+
+# Load your data
+data <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\result\\micro485_biomarker_plotdata.csv")
+taxonIDname <- read_excel("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\processing_4_microbiome_new\\taxonIDmappingdict.xlsx")
+
+### significance in PM2.5 model
+selected_microbiomes <- c('UPDASV260', 'UPDASV092', 'UPDASV087', 'UPDASV105', 'UPDASV346', 'UPDASV468', 'UPDASV337', 'UPDASV281', 'UPDASV339', 'UPDASV389', 'UPDASV001', 'UPDASV375', 'UPDASV384', 'UPDASV037', 'UPDASV218', 'UPDASV073',    'UPDASV286',
+ 'UPDASV278',
+ 'UPDASV311',
+ 'UPDASV212',
+ 'UPDASV134',
+ 'UPDASV195',
+ 'UPDASV256',
+ 'UPDASV444',
+ 'UPDASV089',
+ 'UPDASV064',
+ 'UPDASV270',
+ 'UPDASV153',
+ 'UPDASV422',
+ 'UPDASV173',
+ 'UPDASV224',
+ 'UPDASV126',
+ 'UPDASV435')
+
+filtered_data <- data %>%
+  filter(Index %in% selected_microbiomes) %>%
+  select(Index, PM25_coef, Ghrelin_coef, Resistin_coef, Insulin_coef) %>%
+  rename(PM2.5 = PM25_coef,
+         Ghrelin = Ghrelin_coef,
+         Resistin = Resistin_coef,
+         Insulin = Insulin_coef)
+
+filtered_data <- taxonIDname %>%
+  inner_join(filtered_data, by = c("newtaxonID" = "Index"))
+
+
+# Define the custom function
+extract_name <- function(row) {
+  attlist <- str_split(row, ",")[[1]]
+
+  if (attlist[length(attlist)] == 'nan') {
+    if (attlist[length(attlist) - 1] != 'nan') {
+      name <- paste(attlist[length(attlist) - 1], '(unknown genus)')
+    } else if (attlist[length(attlist) - 2] != 'nan') {
+      name <- paste(attlist[length(attlist) - 2], '(unknown genus)')
+    } else if (attlist[length(attlist) - 3] != 'nan') {
+      name <- paste(attlist[length(attlist) - 3], '(unknown genus)')
+    } else if (attlist[length(attlist) - 4] != 'nan') {
+      name <- paste(attlist[length(attlist) - 4], '(unknown genus)')
+    } else {
+      name <- paste(attlist[length(attlist) - 5], '(unknown genus)')
+    }
+  } else {
+    name <- attlist[length(attlist)]
+  }
+
+  return(name)
+}
+
+# Assuming 'name' is the data frame and 'attribute' is the column
+filtered_data <- filtered_data %>%
+  mutate(newname = sapply(attribute, extract_name))
+
+filtered_data$newname <- gsub("_", " ", filtered_data$newname)
+
+filtered_data <- filtered_data %>%
+  select(PM2.5, Ghrelin, Resistin, Insulin, newname)
+
+# Melt the data into long format
+library(tidyr)
+chord_data <- filtered_data %>%
+  gather(key = "Metric", value = "Coefficient", -newname)
+
+# Rename columns for circlize
+colnames(chord_data) <- c("source", "target", "value")
+print(chord_data)
+
+
+
+```
+
+
+```{r}
+##### plot chord figure part 2
+# Assign colors to the edges based on the source and target values
+target_colors <- c("PM2.5" = "hotpink1", "Ghrelin" = "cyan1", "Resistin" = "deepskyblue2", "Insulin" = "steelblue3")
+
+# Assign colors to the sources
+chord_data$color <- ifelse(chord_data$target == "PM2.5", target_colors["PM2.5"],
+                           ifelse(chord_data$target == "Ghrelin", target_colors["Ghrelin"],
+                                  ifelse(chord_data$target == "Resistin", target_colors["Resistin"],
+                                         ifelse(chord_data$target == "Insulin", target_colors["Insulin"], "red"))))
+
+
+# Initialize the chord diagram
+circos.clear()
+circos.par(gap.after = c(rep(2, length(unique(chord_data$source)) - 1), 10, 
+                         rep(2, length(unique(chord_data$target)) - 1), 10),
+  track.margin = c(0.02, 0.02),  # Reduce margin size
+  canvas.xlim = c(-1.2, 1.2),  # Optional: Adjust plot canvas width
+  canvas.ylim = c(-1.2, 1.2)   # Optional: Adjust plot canvas height
+           )
+
+# Define the sector colors
+sectors <- unique(c(chord_data$source, chord_data$target))
+sector_colors <- c(rep("burlywood1", length(unique(chord_data$source))), target_colors)
+names(sector_colors) <- sectors
+
+
+
+# Plot the chord diagram
+chord_plot <- function() {
+  # Adjust graphical parameters
+  par(cex.main = 2.0, cex.axis = 2.0, cex.lab = 2.0)  # Adjust Axis Tick Labels Font Size text size
+
+  # Plot the chord diagram
+  chordDiagram(chord_data, annotationTrack = "grid", preAllocateTracks = 1,
+               grid.col = sector_colors, col = chord_data$color)
+
+  
+  # Add titles and labels with adjusted text positioning
+  circos.track(track.index = 1, panel.fun = function(x, y) {
+    circos.text(
+      CELL_META$xcenter, 
+      CELL_META$ylim[1] + 0.1,  # Bring labels closer to the circle
+      CELL_META$sector.index, 
+      facing = "clockwise", 
+      niceFacing = TRUE, 
+      adj = c(0, 0.5), 
+      cex = 2.0  # Larger text size for labels
+    )
+  }, bg.border = NA)
+  
+  # Add titles and labels
+  #circos.track(track.index = 1, panel.fun = function(x, y) {
+  #  circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index, 
+   #             facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.5), cex = 2.0)  # Adjust text size
+  #}, bg.border = NA)
+
+  # Add title with adjusted size
+  #title(main = "Association between PM2.5 exposure, oral microbiome, and metabolic biomarkers",
+  title(main = "A)", cex.main = 2.0, adj=0, line = -2, font.main = 1)
+
+}
+
+chord_plot()
+
+### finally save png as 1800 * 2000
+```
+
+
+
+
+
+```{r}
+##### plot chord figure part 2
+# Convert to trfs format
+# Read the saved PNG image
+# Read the saved PNG image
+image_path <- "C:\\Users\\yuqingw1\\Workfolder\\Figure\\Chord_plot.png"
+image_data <- readBin(image_path, what = "raw", n = file.info(image_path)$size)
+
+# Define TRFS metadata
+metadata <- list(
+  Format = "PNG",
+  Resolution = "2700x3000",
+  Description = "Chord diagram showing relationships between PM2.5, microbiome, and biomarkers"
+)
+
+# Define the TRFS output path
+trfs_path <- "C:\\Users\\yuqingw1\\Workfolder\\Figure\\Chord_plot.trfs"
+
+# Write the TRFS file
+con <- file(trfs_path, "wb")
+writeLines("[HEADER]", con)
+
+# Add metadata to the TRFS file
+for (key in names(metadata)) {
+  writeLines(paste0(key, ": ", metadata[[key]]), con)
+}
+
+writeLines("[DATA]", con)
+
+# Write binary image data
+writeBin(image_data, con)
+
+writeLines("[END]", con)
+close(con)
+
+cat("TRFS file saved as '", trfs_path, "'\n", sep = "")
+
+```
+```{r}
+
+##### plot chord figure part 3
+# Add table then convert trfs format
+
+library(magick)
+
+# Load the two PNG plots
+plot1 <- image_read("C:\\Users\\yuqingw1\\Workfolder\\Figure\\Chord_plot.png")
+plot2 <- image_read("C:\\Users\\yuqingw1\\Workfolder\\Figure\\MediationTable.png")
+
+# Zoom in by cropping the image
+plot2_zoomed <- image_scale(plot2, "170%")  # Scale the image to 120% of its original size
+plot2_centered <- image_extent(plot2_zoomed, geometry = "2700x500", gravity = "center", color = "white")
+
+
+# Combine the plots vertically
+combined_plot <- image_append(c(plot1, plot2_centered), stack = TRUE)
+
+# Save the combined plot as a PNG
+output_path <- "C:\\Users\\yuqingw1\\Workfolder\\Figure\\Chord_combined_Tabel.png"
+image_write(combined_plot, output_path)
+cat("Combined plot saved as:", output_path, "\n")
+
+
+# Read the combined PNG image
+combined_image_data <- readBin(output_path, what = "raw", n = file.info(output_path)$size)
+
+# Define TRFS metadata
+metadata <- list(
+  Description = "Integrated figure combining two plots (upper and lower).",
+  Format = "PNG",
+  Resolution = "1500x2000"  # Update this based on the actual dimensions of your combined plot
+)
+
+# Define TRFS file path
+trfs_path <- "C:\\Users\\yuqingw1\\Workfolder\\Figure\\Chord_combined_Tabel.trfs"
+
+# Write the TRFS file
+con <- file(trfs_path, "wb")
+writeLines("[HEADER]", con)
+
+# Add metadata
+for (key in names(metadata)) {
+  writeLines(paste0(key, ": ", metadata[[key]]), con)
+}
+
+writeLines("[DATA]", con)
+
+# Write binary image data
+writeBin(combined_image_data, con)
+
+writeLines("[END]", con)
+close(con)
+
+cat("TRFS file saved as:", trfs_path, "\n")
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+### plot microbiome original value rate
+
+
+# Load necessary libraries
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+
+# Read data
+rate_df <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\result\\rate_df.csv")
+rate_df <- rate_df %>% select(-X)
+correct_names <- c(
+  "Actinobacteria", "Bacteroidetes", "Erysipelotrichaceae",
+  "Lachnospiraceae", "Other Bacteria", "Parvimonas",
+  "Pectinatus", "Proteobacteria", "Tissierella", "sampleID"
+)
+names(rate_df) <- correct_names
+
+
+plotbardata <- rate_df %>%
+  pivot_longer(-sampleID, names_to = "category", values_to = "value")
+
+# Plot
+colors <- c(
+  "Lachnospiraceae" = "#66c2a5",
+  "Oschillospiraceae" = "#fc8d62",
+  "Other Clostridia" = "#8da0cb",
+  "Bacteroidetes" = "#e78ac3",
+  "Actinobacteria" = "#a6d854",
+  "Proteobacteria" = "#1b9e77",
+  "Erysipelotrichaceae" = "#e5c494",
+  "Parvimonas" = "#ffd92f",
+  "Tissierella" = "#66a61e",
+  "Pectinatus" = "#d95f02",
+  "Other Bacteria" = "indianred"
+)
+
+selected_categories <- c(
+  "Bacteroidetes",
+  "Other Bacteria"
+)
+plotbardata <- plotbardata %>%
+  group_by(sampleID) %>%
+  arrange(sampleID, desc(value)) %>%
+  mutate(label = ifelse(category %in% selected_categories, category, NA))
+
+# Plot
+barplot <- ggplot(data = plotbardata, aes(x = factor(sampleID), y = value, fill = category)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = colors) +
+  #geom_text(aes(label = label), size = 2.5, angle = 90, hjust = 0.5, vjust = 0.5, check_overlap = TRUE) +
+  theme_minimal() +
+  labs(title = "Microbiome Composition per Individual", x = NULL, y = NULL) +
+  theme(
+    legend.position = "bottom",  # Adjust position to show the legend at the bottom
+    legend.title = element_text(size = 14),  # Adjust legend title size
+    legend.text = element_text(size = 12),  # Adjust legend text size
+    legend.direction = "horizontal",  # Set the legend direction to horizontal
+    legend.box = "horizontal",  # Set the legend box to horizontal
+    axis.text.x = element_blank(), 
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_text(size = 18),  # Adjust y-axis text size
+    plot.title = element_text(size = 30, hjust = 0.5)  # Adjust title size
+  ) +
+  guides(fill = guide_legend(title = "Category", nrow = 2, byrow = TRUE))  # Arrange the legend in rows
+
+
+print(barplot)
+
+```
+
+
+
+
+
+
+
+
+
+```{r}
+### discard this figure
+# Load your data 
+data <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\plotdata.csv")
+
+selected_microbiomes <- c('UPDASV323','UPDASV019','UPDASV018','UPDASV317','UPDASV110','UPDASV458','UPDASV209','UPDASV412','UPDASV150','UPDASV314','UPDASV051','UPDASV310')
+
+filtered_data <- data %>%
+  filter(Index %in% selected_microbiomes) %>%
+  select(Index, PM25_coef, Ghrelin_coef, Resistin_coef, Insulin_coef) %>%
+  rename(PM2.5 = PM25_coef,
+         Ghrelin = Ghrelin_coef,
+         Resistin = Resistin_coef,
+         Insulin = Insulin_coef)
+
+
+filtered_data <- data %>%
+  filter(Index %in% selected_microbiomes) %>%
+  select(Index, PM25_coef, Ghrelin_coef, Resistin_coef, Insulin_coef) %>%
+  rename(PM2.5 = PM25_coef,
+         Ghrelin = Ghrelin_coef,
+         Resistin = Resistin_coef,
+         Insulin = Insulin_coef)
+
+# Melt the data into long format
+library(tidyr)
+chord_data <- filtered_data %>%
+  gather(key = "Metric", value = "Coefficient", -Index)
+
+# Create Air_Pollution column
+chord_data <- chord_data %>%
+  mutate(Air_Pollution = ifelse(Metric == "PM2.5", "PM2.5", "NA"),
+         Biomarker = ifelse(Metric == "Ghrelin", "Ghrelin",
+                   ifelse(Metric == "Insulin", "Insulin",
+                   ifelse(Metric == "Resistin", "Resistin", "NA"))),
+         Metric = factor(Metric, levels = c("PM2.5", "Ghrelin", "Resistin", "Insulin")))
+
+# Filter out PM2.5 from the Metric column
+chord_data <- chord_data %>%
+  filter(Air_Pollution == "PM2.5" | Metric != "PM2.5")
+
+# Plot the alluvial diagram
+p <- ggplot(data = chord_data,
+            aes(axis1 = Air_Pollution, axis2 = Index, axis3 = Biomarker, y = abs(Coefficient))) +
+  geom_alluvium(aes(fill = Metric)) +
+  geom_stratum(aes(axis1 = Air_Pollution, axis2 = Index, axis3 = Biomarker), width = 1/3, na.rm = TRUE) +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum)), na.rm = TRUE, size = 2) +
+  scale_x_discrete(limits = c("Air Pollution", "Microbiome", "Biomarker"), expand = c(.05, .05)) +
+  theme_minimal() +
+  ggtitle("Relationships between Microbiomes, PM2.5 and Biomarkers") +
+  ylab("abs(Coefficient)") +
+  theme(axis.text.x = element_text(size = 8, face = "bold"),
+        axis.text.y = element_text(size = 8, face = "bold"),
+        plot.title = element_text(size = 14, face = "bold"),
+        legend.title = element_text(size = 10),      # Adjust legend title size
+        legend.text = element_text(size = 8),       # Adjust legend text size
+        strip.text = element_text(size = 8))        # Adjust facet label size
+
+# Show the plot
+print(p)
+
+```
+
+
+
+
+
+
+```{r}
+#### discard this
+### alluvial final version for microbiome and biomarker use the combine set of Insulin and Resisint
+library(ggalluvial)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(patchwork)
+library(readxl)
+library(stringr)
+
+# Load your data
+data <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\plotdata.csv")
+taxonIDname <- read_excel("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\processing_4_microbiome\\taxonIDmappingdict.xlsx")
+
+#selected_microbiomes <- c('UPDASV018','UPDASV009','UPDASV019','UPDASV020','UPDASV028','UPDASV071','UPDASV080','UPDASV084','UPDASV093','UPDASV110','UPDASV123','UPDASV152','UPDASV175','UPDASV200','UPDASV202','UPDASV203','UPDASV204','UPDASV244','UPDASV265','UPDASV294','UPDASV310','UPDASV316','UPDASV317','UPDASV319','UPDASV321','UPDASV322','UPDASV323','UPDASV329','UPDASV330','UPDASV363','UPDASV365','UPDASV412','UPDASV449','UPDASV451','UPDASV473','UPDASV482','UPDASV483','UPDASV492')
+
+selected_microbiomes <- c('UPDASV018','UPDASV019','UPDASV028','UPDASV071','UPDASV084','UPDASV093','UPDASV110','UPDASV152','UPDASV200','UPDASV203','UPDASV204','UPDASV244','UPDASV265','UPDASV294','UPDASV316','UPDASV317','UPDASV319','UPDASV322','UPDASV323','UPDASV412','UPDASV482','UPDASV492')
+
+filtered_data <- data %>%
+  filter(Index %in% selected_microbiomes) %>%
+  select(Index, PM25_coef, Ghrelin_coef, Resistin_coef, Insulin_coef) %>%
+  rename(PM2.5 = PM25_coef,
+         Ghrelin = Ghrelin_coef,
+         Resistin = Resistin_coef,
+         Insulin = Insulin_coef)
+
+filtered_data <- taxonIDname %>%
+  inner_join(filtered_data, by = c("newtaxonID" = "Index"))
+
+# Define the custom function
+extract_name <- function(row) {
+  attlist <- str_split(row, ",")[[1]]
+
+  if (attlist[length(attlist)] == 'nan') {
+    if (attlist[length(attlist) - 1] != 'nan') {
+      name <- paste('Family:', attlist[length(attlist) - 1])
+    } else if (attlist[length(attlist) - 2] != 'nan') {
+      name <- paste('Order:', attlist[length(attlist) - 2])
+    } else if (attlist[length(attlist) - 3] != 'nan') {
+      name <- paste('Class:', attlist[length(attlist) - 3])
+    } else if (attlist[length(attlist) - 4] != 'nan') {
+      name <- paste('Phylum:', attlist[length(attlist) - 4])
+    } else {
+      name <- paste('Unknown ', attlist[length(attlist) - 5])
+    }
+  } else {
+    name <- attlist[length(attlist)]
+  }
+
+  return(name)
+}
+
+# Assuming 'name' is the data frame and 'attribute' is the column
+filtered_data <- filtered_data %>%
+  mutate(newname = sapply(attribute, extract_name))
+
+
+
+
+# Melt the data into long format
+chord_data <- filtered_data %>%
+  gather(key = "Metric", value = "Coefficient", -newname)
+
+# Prepare the data for microbiomes to biomarkers
+chord_data_biomarkers <- chord_data %>%
+  filter(Metric %in% c("Ghrelin", "Resistin", "Insulin")) %>%
+  rename(Biomarker = Metric,
+         Microbiome = newname,
+         Coefficient_biomarker = Coefficient)
+
+chord_data_biomarkers$Coefficient_biomarker <- as.numeric(chord_data_biomarkers$Coefficient_biomarker)
+
+# Prepare the data for the alluvial plot
+alluvial_data <- chord_data_biomarkers %>%
+  mutate(
+    Coefficient = abs(Coefficient_biomarker),
+    Metric = factor(Biomarker, levels = c("Ghrelin", "Resistin", "Insulin"))
+  )
+
+### plot figure
+p<-ggplot(data = alluvial_data,
+       aes(axis1 = Microbiome, axis2 = Biomarker, y = abs(Coefficient) )) +
+  geom_alluvium(aes(fill = Metric)) +
+  geom_stratum(aes(axis1 = Microbiome, axis2 = Biomarker), width = 0.3, na.rm = TRUE, size = 0.08, fill = c(rep('lightcoral', length(unique(alluvial_data$Microbiome))), 'darkseagreen2', 'lightsteelblue2', 'rosybrown2')) +
+  #geom_text(stat = "stratum", aes(label = after_stat(stratum)), na.rm = TRUE, size = 12) +  # Adjust size here
+  geom_text(stat = "stratum", aes(label = Microbiome, axis1 = Microbiome), size = 3, hjust = 0.5, vjust = 0.5) +  # Custom microbiome text
+  geom_text(stat = "stratum", aes(label = Biomarker, axis2 = Biomarker), size = 6, hjust = 0.5, vjust = 0.5) +  # Custom biomarker text
+  
+  scale_x_discrete(limits = c("Microbiome", "Biomarker"), expand = c(.05, .05)) +
+  theme_minimal() +
+  ggtitle("Relationships between Microbiomes and Biomarkers") +
+  #ylab("abs(Coefficient)") +
+  ylab(NULL) +  # Remove y-axis label
+  theme(
+    panel.grid.major = element_blank(), #Remove All Grid Lines
+    panel.grid.minor = element_blank(), #Remove All Grid Lines
+    axis.title.y = element_blank(),  # Remove y-axis title
+    axis.text.y = element_blank(),   # Remove y-axis text
+    axis.ticks.y = element_blank(),  # Remove y-axis ticks
+    axis.text.x = element_text(size = 12, face = "bold"),
+    plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+    legend.position = "none",  # Remove the legend
+    strip.text = element_blank(),  # Hide facet label text (if applicable)
+    plot.margin = unit(c(1,1,1,1), "cm")  # Adjust plot margins to fit text
+  )
+
+
+print(p)
+
+# Adjust the plot dimensions
+#ggsave("alluvial_plot.png", width = 40, height = 40, units = "in", bg = "white")
+```
+
+
+
+
+
+
+```{r}
+### try another chord plot method --- discard
+
+library(circlize)
+library(dplyr)
+library(tidyr)
+
+
+
+# Load your data
+data <- read.csv("C:\\Users\\yuqingw1\\Workfolder\\result\\micro485_biomarker_plotdata.csv")
+taxonIDname <- read_excel("C:\\Users\\yuqingw1\\Workfolder\\ProcessingData\\processing_4_microbiome_new\\taxonIDmappingdict.xlsx")
+
+### significance in PM2.5 model
+selected_microbiomes <- c('UPDASV001','UPDASV037','UPDASV087','UPDASV092','UPDASV105','UPDASV126','UPDASV212','UPDASV218','UPDASV256','UPDASV260','UPDASV278','UPDASV281','UPDASV286','UPDASV311','UPDASV337','UPDASV339','UPDASV346','UPDASV375','UPDASV384','UPDASV389','UPDASV444','UPDASV468','UPDASV064','UPDASV073','UPDASV089','UPDASV134','UPDASV153','UPDASV173','UPDASV186','UPDASV195','UPDASV224','UPDASV270','UPDASV422','UPDASV435','UPDASV097','UPDASV103','UPDASV116','UPDASV139','UPDASV190','UPDASV220','UPDASV371','UPDASV394','UPDASV397','UPDASV428','UPDASV429','UPDASV430')
+
+filtered_data <- data %>%
+  filter(Index %in% selected_microbiomes) %>%
+  select(Index, PM25_coef, Ghrelin_coef, Resistin_coef, Insulin_coef) %>%
+  rename(PM2.5 = PM25_coef,
+         Ghrelin = Ghrelin_coef,
+         Resistin = Resistin_coef,
+         Insulin = Insulin_coef)
+
+filtered_data <- taxonIDname %>%
+  inner_join(filtered_data, by = c("newtaxonID" = "Index"))
+
+
+# Define the custom function
+extract_name <- function(row) {
+  attlist <- str_split(row, ",")[[1]]
+
+  if (attlist[length(attlist)] == 'nan') {
+    if (attlist[length(attlist) - 1] != 'nan') {
+      name <- paste('Family:', attlist[length(attlist) - 1])
+    } else if (attlist[length(attlist) - 2] != 'nan') {
+      name <- paste('Order:', attlist[length(attlist) - 2])
+    } else if (attlist[length(attlist) - 3] != 'nan') {
+      name <- paste('Class:', attlist[length(attlist) - 3])
+    } else if (attlist[length(attlist) - 4] != 'nan') {
+      name <- paste('Phylum:', attlist[length(attlist) - 4])
+    } else {
+      name <- paste('Unknown ', attlist[length(attlist) - 5])
+    }
+  } else {
+    name <- attlist[length(attlist)]
+  }
+
+  return(name)
+}
+
+# Assuming 'name' is the data frame and 'attribute' is the column
+filtered_data <- filtered_data %>%
+  mutate(newname = sapply(attribute, extract_name))
+
+filtered_data$newname <- gsub("_", " ", filtered_data$newname)
+
+filtered_data <- filtered_data %>%
+  select(PM2.5, Ghrelin, Resistin, Insulin, newname)
+
+
+
+# Melt the data into long format
+chord_data <- filtered_data %>%
+  gather(key = "Metric", value = "Coefficient", -newname)
+
+
+# Rename columns for circlize
+colnames(chord_data) <- c("source", "target", "value")
+print(chord_data)
+
+# Assign colors to the edges based on the source and target values
+target_colors <- c("PM2.5" = "hotpink1", "Ghrelin" = "cyan1", "Resistin" = "deepskyblue2", "Insulin" = "steelblue3")
+
+# Assign colors to the sources
+chord_data$color <- ifelse(chord_data$target == "PM2.5", target_colors["PM2.5"],
+                           ifelse(chord_data$target == "Ghrelin", target_colors["Ghrelin"],
+                                  ifelse(chord_data$target == "Resistin", target_colors["Resistin"],
+                                         ifelse(chord_data$target == "Insulin", target_colors["Insulin"], "red"))))
+
+
+# Initialize the chord diagram
+circos.clear()
+circos.par(gap.after = c(rep(2, length(unique(chord_data$source)) - 1), 10, 
+                         rep(2, length(unique(chord_data$target)) - 1), 10))
+
+# Define the sector colors
+sectors <- unique(c(chord_data$source, chord_data$target))
+sector_colors <- c(rep("burlywood1", length(unique(chord_data$source))), target_colors)
+names(sector_colors) <- sectors
+
+# Plot the chord diagram with overlapping links
+chordDiagram(
+  chord_data, 
+  annotationTrack = "grid", 
+  preAllocateTracks = 1,
+  grid.col = sector_colors, 
+  col = chord_data$color,
+  link.overlap = TRUE,  # Allow multiple links to overlap
+  transparency = 0.3,  # Set transparency for overlapping links
+  link.largest.ontop = TRUE  # Ensure the largest links are drawn on top
+)
+
+
+```
+
+
+
+
